@@ -39,17 +39,20 @@ namespace Temporal.Worker.Workflows
             get { return this.GetType().Name; }
         }
 
-        public abstract Task<PayloadsCollection> RunAsync(WorkflowContext workflowCtx);        
+        public abstract Task<PayloadsCollection> RunAsync(WorkflowContext workflowCtx);
 
         public virtual Task<PayloadsCollection> HandleQueryAsync(string queryName, PayloadsCollection input, WorkflowContext workflowCtx)
         {
-            // We need to make sure that this is not retried. Different exception type?
+            // In the actual implementation, we need to make sure to log the error (include payload?) and to propagate an appropriate
+            // kind of failure to the client.
             throw new NotSupportedException($"Query \"{queryName}\" cannot be handled by this workflow {GetWorkflowImplementationDescription()}.");
         }
 
         public virtual Task HandleSignalAsync(string signalName, PayloadsCollection input, WorkflowContext workflowCtx)
         {
-            // We need to make sure that this is not retried. Different exception type?
+            // Signals are fire-and-forget from the client's perspecive. So there is no error we can return.
+            // The actual implementation needs to make sure that the error is logged (include payload?) and not retried
+            // (subsequent invocations of the same signal will, or course, be allowed).
             throw new NotSupportedException($"Signal \"{signalName}\" cannot be handled by this workflow {GetWorkflowImplementationDescription()}.");
         }
 
@@ -96,6 +99,11 @@ namespace Temporal.Worker.Workflows
         Task ExecuteAsync<TArg>(string activityName, TArg activityArguments, CancellationToken cancelToken) where TArg : IDataValue;
         Task ExecuteAsync<TArg>(string activityName, TArg activityArguments, IActivityInvocationConfiguration invocationConfig) where TArg : IDataValue;
         Task ExecuteAsync<TArg>(string activityName, TArg activityArguments, CancellationToken cancelToken, IActivityInvocationConfiguration invocationConfig) where TArg : IDataValue;
+
+        Task<TResult> ExecuteAsync<TResult>(string activityName) where TResult : IDataValue;
+        Task<TResult> ExecuteAsync<TResult>(string activityName, CancellationToken cancelToken) where TResult : IDataValue;
+        Task<TResult> ExecuteAsync<TResult>(string activityName, IActivityInvocationConfiguration invocationConfig) where TResult : IDataValue;
+        Task<TResult> ExecuteAsync<TResult>(string activityName, CancellationToken cancelToken, IActivityInvocationConfiguration invocationConfig) where TResult : IDataValue;
 
         Task<TResult> ExecuteAsync<TArg, TResult>(string activityName, TArg activityArguments) where TArg : IDataValue where TResult : IDataValue;
         Task<TResult> ExecuteAsync<TArg, TResult>(string activityName, TArg activityArguments, CancellationToken cancelToken) where TArg : IDataValue where TResult : IDataValue;
@@ -166,56 +174,178 @@ namespace Temporal.Worker.Workflows
     // When users want to dynamically (at runtime) map implementations to signals / queries,
     // they will use these abstractions.
 
-    public interface IDataValue
+    public abstract class DynamicWorkflowBase<TInput, TResult> : BasicWorkflowBase
+                where TInput : IDataValue
+                where TResult : IDataValue
     {
+        public sealed override async Task<PayloadsCollection> RunAsync(WorkflowContext workflowCtx)
+        {
+            TInput input = (typeof(TInput) == typeof(IDataValue.Void))
+                    ? (TInput) (IDataValue) IDataValue.Void.Instance
+                    : workflowCtx.GetSerializer(workflowCtx.CurrentRun.Input).Deserialize<TInput>(workflowCtx.CurrentRun.Input);
+            
+            DynamicWorkflowContext dynamicCtx = new DynamicWorkflowContext(workflowCtx);
+
+            TResult result = await RunAsync(input, dynamicCtx);
+
+            PayloadsCollection serializedResult = (result == null || result.GetType() == typeof(IDataValue.Void))
+                    ? PayloadsCollection.Empty
+                    : workflowCtx.WorkflowImplementationConfig.DefaultPayloadSerializer.Serialize<TResult>(result);
+
+            return serializedResult;
+        }
+
+        public abstract Task<TResult> RunAsync(TInput input, DynamicWorkflowContext workflowCtx);
     }
+
+    public abstract class DynamicWorkflowBase : DynamicWorkflowBase<IDataValue.Void, IDataValue.Void>    
+    {
+        public sealed override async Task<IDataValue.Void> RunAsync(IDataValue.Void _, DynamicWorkflowContext workflowCtx)
+        {
+            await RunAsync(workflowCtx);
+            return null;
+        }
+
+        public abstract Task RunAsync(DynamicWorkflowContext workflowCtx);
+    }
+
+
+    public abstract class DynamicWorkflowBase<TResult>: DynamicWorkflowBase<IDataValue.Void, TResult>
+            where TResult : IDataValue
+    {
+        public sealed override async Task<TResult> RunAsync(IDataValue.Void _, DynamicWorkflowContext workflowCtx)
+        {
+            TResult result = await RunAsync(workflowCtx); // no await required, but using for consistency with non-generic DynamicWorkflowBase.
+            return result;
+        }
+        
+        public abstract Task<TResult> RunAsync(DynamicWorkflowContext workflowCtx);
+    }
+
+    //public abstract class DynamicWorkflowBase<TInput, TResult> : DynamicWorkflowInternalBase<TInput, TResult>
+    //        where TInput : IDataValue where TResult : IDataValue
+    //{
+    //    internal protected override Task<TResult> RunIternalAsync(TInput input, WorkflowContext workflowCtx)
+    //    {
+    //        return RunDynamicAsync(input, workflowCtx);
+    //    }
+    //    public abstract Task<TResult> RunDynamicAsync(TInput input, WorkflowContext workflowCtx);
+    //}
 
     // ---
 
     public class DynamicWorkflowContext : WorkflowContext
     {
+        internal DynamicWorkflowContext(WorkflowContext baseContext) { }
         public IDynamicWorkflowController DynamicControl { get; }
     }
 
+    /// <summary>SignalHandlers are specified as a triple (priority, matcherRegex, handlerDelegate).
+    /// (Queries are handled in equivalent manner, including default policy.)
+    /// When a signal with a name 'SignalName' is received, we evaluate all respective triples in the order of priority, until
+    /// SignalName is completely matched by the respective matcherRegex. Then the handlerDelegate is invoked to process the 
+    /// signal.
+    /// If no matcherRegex matches the received SignalName, we exaluate whether the current DefaultSignalHandlerPolicy applies.
+    /// Such policy usually comes with its own matcherRegex and applies to all signals that are not matched by any handlers,
+    /// but are matched by the policy's matcherRegex. It may spacify catch-all behaviours such as "cache the signal an process
+    /// it if and when a matching signal handler is configures", "ignore the signal" or other
+    /// (<see cref="DefaultSignalHandlerPolicy"/>).
+    /// If SignalName is not matched by the default policy's matcherRegex, the policy does not apply.
+    /// In that case, the signal will fall through to the hardcoded fafault provided by
+    /// <see cref="BasicWorkflowBase.HandleSignalAsync(String, PayloadsCollection, WorkflowContext)"/>.
+    /// This will likely be ignoring the signal logging an error.</summary>
     public interface IDynamicWorkflowController
     {
-        IHandlerCollection<Action<string, IDataValue, IDynamicWorkflowController>> SignalHandlers { get; }
-        IHandlerCollection<Func<string, IDataValue, IDynamicWorkflowController, Task<IDataValue>>> QueryHandlers { get; }
+        IHandlerCollection<Action<string, IDataValue, DynamicWorkflowContext>> SignalHandlers { get; }
+        IHandlerCollection<Func<string, IDataValue, DynamicWorkflowContext, Task<IDataValue>>> QueryHandlers { get; }
 
-        // Signals & queries that are not matched to the default policy will fall through to the ballback processing in BasicWorkflowBase.
-        DefaultSignalHandlerPolicy DefaultSignalHandlerPolicy { get; set; }
-        DefaultQueryHandlerPolicy DefaultQueryHandlerPolicy { get; set; }
+        SignalHandlingOrderPolicy SignalHandlingOrderPolicy { get; set; }
+
+        SignalHandlerDefaultPolicy SignalHandlerDefaultPolicy { get; set; }
+        QueryHandlerDefaultPolicy QueryHandlerDefaultPolicy { get; set; }
     }
 
     public interface IHandlerCollection<THandler> where THandler : class
     {
-        int Count { get; }        
-        void Get(int index, out string matcherRegex, out THandler handler);
-        void Remove(int index, out string matcherRegex, out THandler handler);
+        int Count { get; }
+        void Clear() { }
+        void GetAt(int index, out string matcherRegex, out THandler handler);
+        void RemoveAt(int index);
+        void RemoveAt(int index, out string matcherRegex, out THandler handler);
+        bool TryAdd(string matcherRegex, THandler handler);
         bool TryInsert(int index, string matcherRegex, THandler handler);
-        bool TryUpdate(int index, string matcherRegex, THandler handler);        
-        bool TryGetByMatcherRegex(string matcherRegex, out int index, out THandler handler);        
-        bool TryFindFirstMatch(string itemToMatch, out int index, out string matcherRegex, out THandler handler);
+        bool TryUpdateAt(int index, string matcherRegex, THandler handler);
+        bool TryGetByRegexPattern(string matcherRegex, out int index);
+        bool TryGetByRegexPattern(string matcherRegex, out int index, out THandler handler);
+        bool TryFindFirstMatch(string itemToMatch, out int index);
+        bool TryFindFirstMatch(string itemToMatch, out int index, out string matcherRegex, out THandler handler);        
     }
 
-    public class DefaultSignalHandlerPolicy
+    /// <summary>This setting affects the processing order of signals. It is independent of SignalHandlerDefaultPolicy.
+    /// However, unless <seealso cref="SignalHandlerDefaultPolicy" /> any of these settings result in the same
+    /// semantic behavior. Should this me a parameter to
+    /// <seealso cref="SignalHandlerDefaultPolicy.CacheAndProcessWhenHandlerIsSet(String)" />?
+    /// <br />
+    /// Need to design when a a cached signal is handled if a matching handler is added:
+    ///  - immediately?
+    ///  - workflow should call some kind of HandleNewlyEnabledSingals() API?
+    ///  - at the end of the current workflow task (at the start there was no handler yet)?
+    ///  - at the satart of next workflow task, before additional signals that arrive in the meantime?
+    ///  - something else?
+    /// This choice may simplify some of the <c>SignalHandlingOrderPolicy</c>-options.</summary>
+    public class SignalHandlingOrderPolicy
     {
-        public static DefaultSignalHandlerPolicy CacheAndProcessWhenHandlerIsSet(string matcherRegex) { return null; }
-        public static DefaultSignalHandlerPolicy CustomHandler(string matcherRegex, Action<string, IDataValue, IDynamicWorkflowController> handler) { return null; }
-        public static DefaultSignalHandlerPolicy Ignore(string matcherRegex) { return null; }
-        public static DefaultSignalHandlerPolicy None() { return null; }
+        /// <summary>Handle signal as soon as it arrives, *if* a matching handler is configured.
+        /// If a handler is added for cached signals, handle them immediately.</summary>
+        public static SignalHandlingOrderPolicy AsSoonAsPossible() { return null; }
+
+        /// <summary>Handle signals strictly in the order of arrival. A cached signal is considered no-yet-handled.
+        /// Thus, if there any signals in the cache, all arriving signals are cached, even if a matching handlers exists.
+        /// If a matching handler is added for a cached signal, but there are earlier signals that have no matching handlers,
+        /// such signal will not be handled until all earlier signals are handled.
+        /// Adding a matching handler for the earliest not-yet-handled signal can trigger several signals queueued up in this
+        /// manner to be handled immadiately.</summary>
+        public static SignalHandlingOrderPolicy Strict() { return null; }
+
+        /// <summary>Handle signal as soon as it arrives, *if* a matching handler is configured.
+        /// If a handler is added for a cached signals, handle them immediately in first-in-last-out order.
+        /// No strict ordering, i.e. if a cached signal does not have a matching handler, it will not affect
+        /// other cached signals, regardless of whether they arrived before or after.</summary>
+        public static SignalHandlingOrderPolicy OnArrivalOrReversedFromCache() { return null; }
+
+        /// <summary>Handle signal as soon as it arrives, *if* a matching handler is configured.
+        /// If a handler is added for cached signals, handle them strictly in first-in-first-out order.
+        /// I.e., there is strict ordering (similar to <seealso cref="SignalHandlingOrderPolicy.Strict" />) only
+        /// for signals that are readily in the cache.</summary>
+        public static SignalHandlingOrderPolicy OnArrivalOrStrictFromCache() { return null; }
+
+        /// <summary>Handle signal as soon as it arrives, *if* a matching handler is configured.
+        /// If a handler is added for cached signals, handle them strictly in first-in-last-out order.
+        /// I.e., there is strict reversed ordering (similar to <seealso cref="SignalHandlingOrderPolicy.Strict" />) only
+        /// for signals that are readily in the cache.</summary>
+        public static SignalHandlingOrderPolicy OnArrivalOrStrictReversedFromCache() { return null; }
+    }
+
+    public class SignalHandlerDefaultPolicy
+    {
+        public static SignalHandlerDefaultPolicy CacheAndProcessWhenHandlerIsSet(string matcherRegex) { return null; }
+        public static SignalHandlerDefaultPolicy CustomHandler(string matcherRegex, Action<string, IDataValue, DynamicWorkflowContext> handler) { return null; }
+        public static SignalHandlerDefaultPolicy Ignore(string matcherRegex) { return null; }
+        public static SignalHandlerDefaultPolicy None() { return null; }
 
         public string Name { get; }
         public string MatcherRegex { get; }
         public bool IsMatch(string signalName) { return false; }
+
+        public bool TryClearCache() { return false; }
     }
 
-    public class DefaultQueryHandlerPolicy
+    public class QueryHandlerDefaultPolicy
     {
-        public static DefaultSignalHandlerPolicy ConstantResultValue(string matcherRegex, IDataValue resultValue) { return null; }
-        public static DefaultSignalHandlerPolicy CustomHandler(string matcherRegex, Func<string, IDataValue, IDynamicWorkflowController, Task<IDataValue>> handler) { return null; }
-        public static DefaultQueryHandlerPolicy CustomError(string matcherRegex, Func<string, IDataValue, Exception> errorFactory) { return null; }
-        public static DefaultQueryHandlerPolicy None() { return null; }
+        public static QueryHandlerDefaultPolicy ConstantResultValue(string matcherRegex, IDataValue resultValue) { return null; }
+        public static QueryHandlerDefaultPolicy CustomHandler(string matcherRegex, Func<string, IDataValue, DynamicWorkflowContext, Task<IDataValue>> handler) { return null; }
+        public static QueryHandlerDefaultPolicy CustomError(string matcherRegex, Func<string, IDataValue, Exception> errorFactory) { return null; }
+        public static QueryHandlerDefaultPolicy None() { return null; }
 
         public string Name { get; }
         public string MatcherRegex { get; }

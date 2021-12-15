@@ -2,11 +2,21 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Temporal.CommonDataModel
 {
     public class CommonDataModelApi
     {
+    }
+
+    public interface IDataValue
+    {
+        public sealed class Void : IDataValue
+        {            
+            public static readonly Void Instance = new Void();
+            public static readonly Task<Void> CompletedTask = Task.FromResult(Instance);            
+        }
     }
 
     public class PayloadsCollection : IReadOnlyList<Payload>

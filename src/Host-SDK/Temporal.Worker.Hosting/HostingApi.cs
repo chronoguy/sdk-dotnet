@@ -65,17 +65,51 @@ namespace Temporal.Worker.Hosting
                 where TActivityImplementation : class, IBasicActivity
         { return null; }
 
+        public static ActivityRegistration AddActivity(this IServiceCollection serviceCollection,
+                                                       string activityTypeName,
+                                                       Func<ActivityContext, Task> activityImplementation)
+        { return null; }
+
+        public static ActivityRegistration AddActivity(this IServiceCollection serviceCollection,
+                                                       string activityTypeName,
+                                                       Func<IServiceProvider, Func<ActivityContext, Task>> activityImplementationFactory)
+        { return null; }
+
         public static ActivityRegistration AddActivity<TArg>(this IServiceCollection serviceCollection,
                                                              string activityTypeName,
                                                              Func<TArg, ActivityContext, Task> activityImplementation)
                                             where TArg : IDataValue
         { return null; }
 
+        public static ActivityRegistration AddActivity<TArg>(this IServiceCollection serviceCollection,
+                                                             string activityTypeName,
+                                                             Func<IServiceProvider, Func<TArg, ActivityContext, Task>> activityImplementationFactory)
+                                            where TArg : IDataValue
+        { return null; }
+
+        public static ActivityRegistration AddActivity<TResult>(this IServiceCollection serviceCollection,
+                                                                string activityTypeName,
+                                                                Func<ActivityContext, Task<TResult>> activityImplementation)
+                                            where TResult : IDataValue
+        { return null; }
+
+        public static ActivityRegistration AddActivity<TResult>(this IServiceCollection serviceCollection,
+                                                                string activityTypeName,
+                                                                Func<IServiceProvider, Func<ActivityContext, Task<TResult>>> activityImplementationFactory)
+                                            where TResult : IDataValue
+        { return null; }
+
         public static ActivityRegistration AddActivity<TArg, TResult>(this IServiceCollection serviceCollection,
                                                                       string activityTypeName,
                                                                       Func<TArg, ActivityContext, Task<TResult>> activityImplementation)
                                             where TArg : IDataValue where TResult : IDataValue
-        { return null; }        
+        { return null; }
+
+        public static ActivityRegistration AddActivity<TArg, TResult>(this IServiceCollection serviceCollection,
+                                                                      string activityTypeName,
+                                                                      Func<IServiceProvider, Func<TArg, ActivityContext, Task<TResult>>> activityImplementationFactory)
+                                            where TArg : IDataValue where TResult : IDataValue
+        { return null; }
     }
 
     public class WorkerRegistration
