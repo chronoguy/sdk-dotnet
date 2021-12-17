@@ -15,11 +15,12 @@ namespace Temporal.Sdk.BasicSamples
 {
     /// <summary>
     /// This is the lowest level of a workflow / activity abstraction available to the users.
-    /// We will not guide them here in any prominent way.
+    /// We will NOT guide them here in any prominent way.
     /// However, users who wish to realize advanced scenarios, may want to use this low-level abstraction.
     /// Examples:
     ///  - a different way to map attributed interfaces or classes to temporal messages
     ///  - a different appoach to implementing a dynamic workflow to the one offered by our framework
+    ///  For a TYPICAL workflow implementation that we WILL guide users towards, see <see cref="Part04_TypicalWorkflow"/>.
     /// </summary>
     public class Part01_BasicWorkflowUsage
     {       

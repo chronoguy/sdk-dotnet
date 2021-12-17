@@ -122,9 +122,9 @@ namespace Temporal.Worker.Workflows.Dynamic
     }
 
     /// <summary>This setting affects the processing order of signals. It is independent of SignalHandlerDefaultPolicy.
-    /// However, unless <seealso cref="SignalHandlerDefaultPolicy" /> any of these settings result in the same
-    /// semantic behavior. Should this me a parameter to
-    /// <seealso cref="SignalHandlerDefaultPolicy.CacheAndProcessWhenHandlerIsSet(String)" />?
+    /// However, unless <see cref="SignalHandlerDefaultPolicy" /> is caching, any of these settings result in the same
+    /// semantic behavior. Should this instead be a parameter to
+    /// <see cref="SignalHandlerDefaultPolicy.CacheAndProcessWhenHandlerIsSet(String)" />?
     /// <br />
     /// Need to design when a a cached signal is handled if a matching handler is added:
     ///  - immediately?
@@ -155,13 +155,13 @@ namespace Temporal.Worker.Workflows.Dynamic
 
         /// <summary>Handle signal as soon as it arrives, *if* a matching handler is configured.
         /// If a handler is added for cached signals, handle them strictly in first-in-first-out order.
-        /// I.e., there is strict ordering (similar to <seealso cref="SignalHandlingOrderPolicy.Strict" />) only
+        /// I.e., there is strict ordering (similar to <see cref="SignalHandlingOrderPolicy.Strict" />) only
         /// for signals that are readily in the cache.</summary>
         public static SignalHandlingOrderPolicy OnArrivalOrStrictFromCache() { return null; }
 
         /// <summary>Handle signal as soon as it arrives, *if* a matching handler is configured.
         /// If a handler is added for cached signals, handle them strictly in first-in-last-out order.
-        /// I.e., there is strict reversed ordering (similar to <seealso cref="SignalHandlingOrderPolicy.Strict" />) only
+        /// I.e., there is strict reversed ordering (similar to <see cref="SignalHandlingOrderPolicy.Strict" />) only
         /// for signals that are readily in the cache.</summary>
         public static SignalHandlingOrderPolicy OnArrivalOrStrictReversedFromCache() { return null; }
     }

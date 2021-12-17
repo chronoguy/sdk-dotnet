@@ -38,7 +38,7 @@ namespace Temporal.Sdk.BasicSamples
             public State[] States { get; set; }             // States
         }
 
-        /// <summary>Example instance of <seealso cref="CustomWorkflowDefinition" />.</summary>
+        /// <summary>Example instance of <see cref="CustomWorkflowDefinition" />.</summary>
         private const string CustomWorkflowJson = "{"
                 + "\n    'CommandNamespace': 'demo',"
                 + "\n    'ExitCommand': 'Quit',"
