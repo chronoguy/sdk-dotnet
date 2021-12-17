@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
 using Temporal.CommonDataModel;
-using Temporal.Serialization;
 using Temporal.Worker.Hosting;
-using Temporal.Worker.Workflows;
+using Temporal.Worker.Activities;
+using Temporal.Worker.Workflows.Dynamic;
 
 namespace Temporal.Sdk.BasicSamples
 {
@@ -154,7 +156,7 @@ namespace Temporal.Sdk.BasicSamples
 
         public class CustomWorkflowFactory
         {
-            public Task<CustomWorkflowDefinition> LoadDemoWorkflowAsync(ActivityContext _)
+            public Task<CustomWorkflowDefinition> LoadDemoWorkflowAsync(WorkflowActivityContext _)
             {
                 return Task.FromResult(CustomWorkflowDefinition.CreateFromJson(CustomWorkflowJson));
             }
@@ -162,7 +164,7 @@ namespace Temporal.Sdk.BasicSamples
 
         public class WorkflowStateNotificationHandler
         {
-            public Task OnWorkflowStateEntered(NotifyWorkflowStateEnteredData stateData, ActivityContext activityCtx)
+            public Task OnWorkflowStateEntered(NotifyWorkflowStateEnteredData stateData, WorkflowActivityContext activityCtx)
             {
                 // ToDo: Add stuff to ActivityContext
                 //Console.WriteLine($"[{activityCtx.WorkflowInfo}] Entered \"{stateData.State}\".");

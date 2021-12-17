@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Threading.Tasks;
+
 using Microsoft.Extensions.Hosting;
+
 using Temporal.CommonDataModel;
+using Temporal.Worker.Activities;
 using Temporal.Worker.Hosting;
 using Temporal.Worker.Workflows;
+using Temporal.Worker.Workflows.Base;
 
 namespace Temporal.Sdk.BasicSamples
 {
@@ -84,7 +88,7 @@ namespace Temporal.Sdk.BasicSamples
             /// <summary>Optionally customize the name under which this activity is registered:</summary>
             public string ActivityTypeName { get { return "SpeakAGreeting1"; } }
             
-            public Task<PayloadsCollection> RunAsync(PayloadsCollection input, ActivityContext activityCtx)
+            public Task<PayloadsCollection> RunAsync(PayloadsCollection input, WorkflowActivityContext activityCtx)
             {
                 string greetingText = activityCtx.GetSerializer(input).Deserialize<string>(input) ?? "<null>";
                 Console.WriteLine($"[{ActivityTypeName}] {greetingText}");
@@ -94,7 +98,7 @@ namespace Temporal.Sdk.BasicSamples
 
         public static class Speak
         {
-            public static Task GreetingAsync(SpeechRequest input, ActivityContext activityCtx)
+            public static Task GreetingAsync(SpeechRequest input, WorkflowActivityContext activityCtx)
             {
                 Console.WriteLine($"[{activityCtx.ActivityTypeName}] {input.Text}");
                 return Task.CompletedTask;

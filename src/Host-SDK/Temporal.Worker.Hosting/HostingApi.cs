@@ -1,16 +1,21 @@
 ﻿using System;
 using System.Threading.Tasks;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
 using Temporal.CommonDataModel;
-using Temporal.Serialization;
+using Temporal.Worker.Activities;
 using Temporal.Worker.Workflows;
+using Temporal.Worker.Workflows.Base;
 
 namespace Temporal.Worker.Hosting
 {
     public class HostingApi
     {
     }
+
+    // ----------- -----------
 
     public static class HostBuilderExtensions
     {
@@ -49,8 +54,21 @@ namespace Temporal.Worker.Hosting
         {
             return hostBuilder;
         }
-
     }
+
+    public interface ITemporalServiceConfiguration
+    {
+        string OrchestratorServiceUrl { get; }
+        string Namespace { get; }
+    }
+
+    public class TemporalServiceConfiguration : ITemporalServiceConfiguration
+    {
+        public string OrchestratorServiceUrl { get; set; }
+        public string Namespace { get; set; }
+    }
+
+    // ----------- -----------
 
     public static class ServiceCollectionExtensions
     {
@@ -67,47 +85,47 @@ namespace Temporal.Worker.Hosting
 
         public static ActivityRegistration AddActivity(this IServiceCollection serviceCollection,
                                                        string activityTypeName,
-                                                       Func<ActivityContext, Task> activityImplementation)
+                                                       Func<WorkflowActivityContext, Task> activityImplementation)
         { return null; }
 
         public static ActivityRegistration AddActivity(this IServiceCollection serviceCollection,
                                                        string activityTypeName,
-                                                       Func<IServiceProvider, Func<ActivityContext, Task>> activityImplementationFactory)
+                                                       Func<IServiceProvider, Func<WorkflowActivityContext, Task>> activityImplementationFactory)
         { return null; }
 
         public static ActivityRegistration AddActivity<TArg>(this IServiceCollection serviceCollection,
                                                              string activityTypeName,
-                                                             Func<TArg, ActivityContext, Task> activityImplementation)
+                                                             Func<TArg, WorkflowActivityContext, Task> activityImplementation)
                                             where TArg : IDataValue
         { return null; }
 
         public static ActivityRegistration AddActivity<TArg>(this IServiceCollection serviceCollection,
                                                              string activityTypeName,
-                                                             Func<IServiceProvider, Func<TArg, ActivityContext, Task>> activityImplementationFactory)
+                                                             Func<IServiceProvider, Func<TArg, WorkflowActivityContext, Task>> activityImplementationFactory)
                                             where TArg : IDataValue
         { return null; }
 
         public static ActivityRegistration AddActivity<TResult>(this IServiceCollection serviceCollection,
                                                                 string activityTypeName,
-                                                                Func<ActivityContext, Task<TResult>> activityImplementation)
+                                                                Func<WorkflowActivityContext, Task<TResult>> activityImplementation)
                                             where TResult : IDataValue
         { return null; }
 
         public static ActivityRegistration AddActivity<TResult>(this IServiceCollection serviceCollection,
                                                                 string activityTypeName,
-                                                                Func<IServiceProvider, Func<ActivityContext, Task<TResult>>> activityImplementationFactory)
+                                                                Func<IServiceProvider, Func<WorkflowActivityContext, Task<TResult>>> activityImplementationFactory)
                                             where TResult : IDataValue
         { return null; }
 
         public static ActivityRegistration AddActivity<TArg, TResult>(this IServiceCollection serviceCollection,
                                                                       string activityTypeName,
-                                                                      Func<TArg, ActivityContext, Task<TResult>> activityImplementation)
+                                                                      Func<TArg, WorkflowActivityContext, Task<TResult>> activityImplementation)
                                             where TArg : IDataValue where TResult : IDataValue
         { return null; }
 
         public static ActivityRegistration AddActivity<TArg, TResult>(this IServiceCollection serviceCollection,
                                                                       string activityTypeName,
-                                                                      Func<IServiceProvider, Func<TArg, ActivityContext, Task<TResult>>> activityImplementationFactory)
+                                                                      Func<IServiceProvider, Func<TArg, WorkflowActivityContext, Task<TResult>>> activityImplementationFactory)
                                             where TArg : IDataValue where TResult : IDataValue
         { return null; }
     }
@@ -132,40 +150,7 @@ namespace Temporal.Worker.Hosting
         public ActivityRegistration AssignWorker(WorkerRegistration workerRegistration) { return this; }
     }
 
-    // -----------
-
-    public interface ITemporalCoreEngine
-    {
-    }
-
-    public class TemporalCoreEngine : ITemporalCoreEngine
-    {
-        public TemporalCoreEngine(TemporalServiceConfiguration config) { }
-    }
-
-    public interface ITemporalServiceConfiguration
-    {
-        string OrchestratorServiceUrl { get; }
-        string Namespace { get; }
-    }
-
-    public class TemporalServiceConfiguration : ITemporalServiceConfiguration
-    {
-        public string OrchestratorServiceUrl { get; set; }
-        public string Namespace { get; set; }
-    }
-
-    // -----------
-
-    public interface ITemporalWorker
-    {
-
-    }
-
-    public class TemporalWorker : ITemporalWorker
-    {
-        public TemporalWorker(TemporalWorkerConfiguration config) { }
-    }
+    // ----------- -----------
 
     public interface ITemporalWorkerConfiguration
     {
@@ -185,8 +170,6 @@ namespace Temporal.Worker.Hosting
         public StickyQueuePollingConfiguration StickyQueue { get; set; }
         IQueuePollingConfiguration ITemporalWorkerConfiguration.NonStickyQueue { get { return this.NonStickyQueue; } }
         IStickyQueuePollingConfiguration ITemporalWorkerConfiguration.StickyQueue { get { return this.StickyQueue; } }
-
-
     }
 
     public interface IQueuePollingConfiguration
@@ -210,71 +193,4 @@ namespace Temporal.Worker.Hosting
     {
         public int ScheduleToStartTimeoutMillisecs { get; set; }
     }
-
-    // -----------
-
-    /// <summary>
-    /// Per-workflow settings related to the execution container of a workflow.
-    /// Must not affect the business logic.
-    /// Think: if the same workflow was run on a different host, these may be different.
-    /// Example: Timeouts.
-    /// </summary>
-    public interface IWorkflowExecutionConfiguration
-    {
-        int WorkflowTaskTimeoutMillisec { get; }
-    }
-
-    public class WorkflowExecutionConfiguration : IWorkflowExecutionConfiguration
-    {
-        public int WorkflowTaskTimeoutMillisec { get; set; }
-    }
-
-    /// <summary>
-    /// Per-workflow settings related to the business logic of a workflow.
-    /// May affect the business logic.
-    /// Think: if the same workflow was run on a different host, these must be the same.
-    /// Example: Serializer.
-    /// </summary>
-    public interface IWorkflowImplementationConfiguration
-    {
-        IPayloadSerializer DefaultPayloadSerializer { get; }
-        IActivityInvocationConfiguration DefaultActivityInvocationConfig { get; }
-    }
-
-    public class WorkflowImplementationConfiguration : IWorkflowImplementationConfiguration
-    {
-        public IPayloadSerializer DefaultPayloadSerializer { get; set; }
-        public ActivityInvocationConfiguration DefaultActivityInvocationConfig { get; set; }
-        IActivityInvocationConfiguration IWorkflowImplementationConfiguration.DefaultActivityInvocationConfig { get { return this.DefaultActivityInvocationConfig; } }
-    }
-
-    // -----------
-
-    public interface IActivityInvocationConfiguration
-    {
-        string TaskQueueMoniker { get; }
-        int ScheduleToStartTimeoutMillisecs { get; }
-        int ScheduleToCloseTimeoutMillisecs { get; }
-        int StartToCloseTimeoutMillisecs { get; }
-        int HeartbeatTimeoutMillisecs { get; }
-        RetryPolicy RetryPolicy { get; }
-    }
-
-    public class ActivityInvocationConfiguration : IActivityInvocationConfiguration
-    {
-        public string TaskQueueMoniker { get; set; }
-        public int ScheduleToStartTimeoutMillisecs { get; set; }
-        public int ScheduleToCloseTimeoutMillisecs { get; set; }
-        public int StartToCloseTimeoutMillisecs { get; set; }
-        public int HeartbeatTimeoutMillisecs { get; set; }
-        public RetryPolicy RetryPolicy { get; set; }
-    }
-
-    // -----------
-
-    public class RetryPolicy
-    {
-    }
-
-    // -----------
 }

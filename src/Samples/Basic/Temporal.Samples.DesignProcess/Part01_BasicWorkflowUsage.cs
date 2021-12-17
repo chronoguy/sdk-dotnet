@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Threading.Tasks;
+
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+
 using Temporal.CommonDataModel;
 using Temporal.Serialization;
 using Temporal.Worker.Hosting;
 using Temporal.Worker.Workflows;
+using Temporal.Worker.Workflows.Base;
+using Temporal.Worker.Activities;
 
 namespace Temporal.Sdk.BasicSamples
 {
@@ -51,7 +55,7 @@ namespace Temporal.Sdk.BasicSamples
 
         public class SpeakAGreetingActivity : BasicActivityBase
         {
-            public override Task<PayloadsCollection> RunAsync(PayloadsCollection input, ActivityContext activityCtx)
+            public override Task<PayloadsCollection> RunAsync(PayloadsCollection input, WorkflowActivityContext activityCtx)
             {
                 string greetingText = activityCtx.GetSerializer(input).Deserialize<string>(input) ?? "<null>";
                 Console.WriteLine($"[{ActivityTypeName}] {greetingText}");
