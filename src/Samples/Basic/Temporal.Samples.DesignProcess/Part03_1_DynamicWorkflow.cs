@@ -15,7 +15,7 @@ namespace Temporal.Sdk.BasicSamples
 {
     /// <summary>
     /// </summary>
-    public class Part03_DynamicWorkflow
+    public class Part03_1_DynamicWorkflow
     {
         /// <summary>A very simple dynamic workflow definition toy model.</summary>
         public class CustomWorkflowDefinition : IDataValue
