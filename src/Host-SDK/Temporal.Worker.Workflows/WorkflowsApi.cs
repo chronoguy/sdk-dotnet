@@ -17,9 +17,10 @@ namespace Temporal.Worker.Workflows
     {        
         public IWorkflowExecutionConfiguration WorkflowExecutionConfig { get; }
         public IWorkflowImplementationConfiguration WorkflowImplementationConfig { get; }
-        public OrchestrationService Orchestrator { get; }
+        public IOrchestrationService Orchestrator { get; }
         public WorkflowRunContext CurrentRun { get; }
         public WorkflowPreviousRunContext  LastRun { get; }
+        public IDeterministicApi DeterministicApi { get; set; }
 
         /// <summary>Get the serializer for the specified payload.
         /// If metadata specifies an available serializer - get that one;
@@ -30,9 +31,26 @@ namespace Temporal.Worker.Workflows
 
     // ----------- -----------
 
-    public sealed class OrchestrationService
+    public interface IOrchestrationService
     {
-        public IActivityOrchestrationService Activities { get; }        
+        IActivityOrchestrationService Activities { get; }
+        void ConfigureContinueAsNew(bool startNewRunAfterReturn, IDataValue newRunInput);
+        void ConfigureContinueAsNew(bool startNewRunAfterReturn);
+        Task SleepAsync(TimeSpan timeSpan);
+        Task<bool> SleepAsync(TimeSpan timeSpan, CancellationToken cancelToken);
+        Task SleepUntilAsync(DateTime sleepEndUtc);
+        Task<bool> SleepUntilAsync(DateTime sleepEndUtc, CancellationToken cancelToken);
+    }
+
+    public sealed class OrchestrationService : IOrchestrationService
+    {        
+        public IActivityOrchestrationService Activities { get; }
+        public void ConfigureContinueAsNew(bool startNewRunAfterReturn, IDataValue newRunInput) { }
+        public void ConfigureContinueAsNew(bool startNewRunAfterReturn) { }
+        public Task SleepAsync(TimeSpan timeSpan) { return null; }
+        public Task<bool> SleepAsync(TimeSpan timeSpan, CancellationToken cancelToken) { return null; }
+        public Task SleepUntilAsync(DateTime sleepEndUtc) { return null; }
+        public Task<bool> SleepUntilAsync(DateTime sleepEndUtc, CancellationToken cancelToken) { return null; }
     }
 
     public interface IActivityOrchestrationService
@@ -56,6 +74,21 @@ namespace Temporal.Worker.Workflows
         Task<TResult> ExecuteAsync<TArg, TResult>(string activityName, TArg activityArguments, CancellationToken cancelToken) where TArg : IDataValue where TResult : IDataValue;
         Task<TResult> ExecuteAsync<TArg, TResult>(string activityName, TArg activityArguments, IActivityInvocationConfiguration invocationConfig) where TArg : IDataValue where TResult : IDataValue;
         Task<TResult> ExecuteAsync<TArg, TResult>(string activityName, TArg activityArguments, CancellationToken cancelToken, IActivityInvocationConfiguration invocationConfig) where TArg : IDataValue where TResult : IDataValue;
+    }
+
+    // ----------- -----------
+
+    public interface IDeterministicApi
+    {
+        Random CreateNewRandom();
+        Guid CreateNewGuid();
+    }
+
+    public class DeterministicApi : IDeterministicApi
+    {
+        public Random CreateNewRandom() { return null; }
+
+        public Guid CreateNewGuid() { return default(Guid); }
     }
 
     // ----------- -----------
@@ -149,12 +182,7 @@ namespace Temporal.Worker.Workflows
         public string RunMethod { get; }
 
         public string WorkflowTypeName { get; set; }
-
-        public WorkflowAttribute()
-            : this(String.Empty)
-        {
-        }
-
+        
         public WorkflowAttribute(string runMethod)
         {
             RunMethod = runMethod;

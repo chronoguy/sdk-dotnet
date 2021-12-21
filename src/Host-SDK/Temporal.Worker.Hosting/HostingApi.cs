@@ -75,8 +75,12 @@ namespace Temporal.Worker.Hosting
         public static WorkerRegistration AddTemporalWorker(this IServiceCollection serviceCollection)
         { return null; }        
 
-        public static WorkflowRegistration AddWorkflow<TWorkflowImplementation>(this IServiceCollection serviceCollection)
+        public static WorkflowRegistration AddWorkflowWithOverrides<TWorkflowImplementation>(this IServiceCollection serviceCollection)
                 where TWorkflowImplementation : class, IBasicWorkflow
+        { return null; }
+
+        public static WorkflowRegistration AddWorkflowWithAttributes<TWorkflowImplementation>(this IServiceCollection serviceCollection)
+                where TWorkflowImplementation : class
         { return null; }
 
         public static ActivityRegistration AddActivity<TActivityImplementation>(this IServiceCollection serviceCollection)

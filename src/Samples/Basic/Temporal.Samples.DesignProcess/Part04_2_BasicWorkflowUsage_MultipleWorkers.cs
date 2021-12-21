@@ -126,7 +126,7 @@ namespace Temporal.Sdk.BasicSamples
                         // The following workflows and activities will be assigned to the First Worker:
 
                         // (using  default WorkflowExecutionConfiguration:)
-                        serviceCollection.AddWorkflow<SayHelloWorkflow>().AssignWorker(workerRegistration1);
+                        serviceCollection.AddWorkflowWithOverrides<SayHelloWorkflow>().AssignWorker(workerRegistration1);
 
                         serviceCollection.AddActivity<SpeakAGreetingActivity>().AssignWorker(workerRegistration1);
 
@@ -134,7 +134,7 @@ namespace Temporal.Sdk.BasicSamples
                         // The following workflows and activities will be assigned to the Second Worker:
 
                         // (use custom WorkflowExecutionConfiguration:)
-                        serviceCollection.AddWorkflow<SayGoodByeWorkflow>()
+                        serviceCollection.AddWorkflowWithOverrides<SayGoodByeWorkflow>()
                                 .AssignWorker(workerRegistration2)
                                 .ConfigureExecution(workflowExecutionConfiguration =>
                                 {
@@ -147,7 +147,7 @@ namespace Temporal.Sdk.BasicSamples
 
                         // Not specifying a token assiciates workflows & activities with ALL workers:
 
-                        serviceCollection.AddWorkflow<SayGreetingWorkflow>();
+                        serviceCollection.AddWorkflowWithOverrides<SayGreetingWorkflow>();
 
                         // Nothing prevents us from registering the same implementation several times under different activity names:
                         serviceCollection.AddActivity<SpeechRequest>("SpeakAGreeting3", Speak.GreetingAsync);

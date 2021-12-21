@@ -82,7 +82,7 @@ namespace Temporal.Sdk.BasicSamples
                                     temporalWorkerConfig.TaskQueueMoniker = "Some Queue";
                                 });
 
-                        serviceCollection.AddWorkflow<SayHelloWorkflow>();
+                        serviceCollection.AddWorkflowWithOverrides<SayHelloWorkflow>();
 
                         serviceCollection.AddActivity<SpeakAGreetingActivity>();
                     })
@@ -99,7 +99,7 @@ namespace Temporal.Sdk.BasicSamples
                     .ConfigureServices(serviceCollection =>
                     {
                         serviceCollection.AddTemporalWorker();
-                        serviceCollection.AddWorkflow<SayHelloWorkflow>();
+                        serviceCollection.AddWorkflowWithOverrides<SayHelloWorkflow>();
                         serviceCollection.AddActivity<SpeakAGreetingActivity>();
                     })
                     .Build();
@@ -119,7 +119,7 @@ namespace Temporal.Sdk.BasicSamples
                                     temporalWorkerConfig.TaskQueueMoniker = "Some Queue";
                                 });
 
-                        serviceCollection.AddWorkflow<SayHelloWorkflow>()
+                        serviceCollection.AddWorkflowWithOverrides<SayHelloWorkflow>()
                                 .ConfigureExecution(workflowExecutionConfig =>
                                 {
                                     workflowExecutionConfig.WorkflowTaskTimeoutMillisec = 5_000;
@@ -166,7 +166,7 @@ namespace Temporal.Sdk.BasicSamples
                                     temporalWorkerConfig.StickyQueue.ConcurrentActivityTaskPollsMax = 5;
                                 });
 
-                        serviceCollection.AddWorkflow<SayHelloWorkflow>();
+                        serviceCollection.AddWorkflowWithOverrides<SayHelloWorkflow>();
                         serviceCollection.AddActivity<SpeakAGreetingActivity>();
                     })
                     .Build();
@@ -193,7 +193,7 @@ namespace Temporal.Sdk.BasicSamples
                     .ConfigureServices(serviceCollection =>
                     {
                         serviceCollection.AddTemporalWorker();
-                        serviceCollection.AddWorkflow<SayHelloWorkflow>();
+                        serviceCollection.AddWorkflowWithOverrides<SayHelloWorkflow>();
                         serviceCollection.AddActivity<SpeakAGreetingActivity>();
                     })
                     .Build();

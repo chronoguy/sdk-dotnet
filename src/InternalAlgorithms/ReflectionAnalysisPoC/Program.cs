@@ -12,7 +12,7 @@ namespace ReflectionAnalysisPoC
      * The final implementation will not look like this!
      *********** */
     
-    [Workflow()]
+    [Workflow(nameof(EatAsync))]
     public interface IWalking
     {
         [WorkflowSignal("DrinkWater")]
@@ -26,7 +26,7 @@ namespace ReflectionAnalysisPoC
         public Task GoAsync();
     }
 
-    [Workflow]
+    [Workflow(null)]
     public interface IHiking : IWalking
     {
         [WorkflowSignal("DrinkWater4")]
