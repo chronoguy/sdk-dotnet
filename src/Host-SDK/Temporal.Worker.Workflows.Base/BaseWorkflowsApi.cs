@@ -23,7 +23,7 @@ namespace Temporal.Worker.Workflows.Base
 
         Task HandleSignalAsync(string signalName, PayloadsCollection input, WorkflowContext workflowCtx);
 
-        Task<PayloadsCollection> HandleQueryAsync(string signalName, PayloadsCollection input, WorkflowContext workflowCtx);
+        PayloadsCollection HandleQuery(string signalName, PayloadsCollection input, WorkflowContext workflowCtx);
     }
 
     public abstract class BasicWorkflowBase : IBasicWorkflow
@@ -37,7 +37,7 @@ namespace Temporal.Worker.Workflows.Base
 
         public abstract Task<PayloadsCollection> RunAsync(WorkflowContext workflowCtx);
 
-        public virtual Task<PayloadsCollection> HandleQueryAsync(string queryName, PayloadsCollection input, WorkflowContext workflowCtx)
+        public virtual PayloadsCollection HandleQuery(string queryName, PayloadsCollection input, WorkflowContext workflowCtx)
         {
             // In the actual implementation, we need to make sure to log the error (include payload?) and to propagate an appropriate
             // kind of failure to the client.

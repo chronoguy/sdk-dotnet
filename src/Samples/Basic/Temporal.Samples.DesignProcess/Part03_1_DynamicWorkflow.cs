@@ -95,7 +95,7 @@ namespace Temporal.Sdk.BasicSamples
                 // Configure the exit signal handler:
                 string customExitCommand = $"{customWf.CommandNamespace}{customWf.ExitCommand}";
                 workflowCtx.DynamicControl.SignalHandlers.TryAdd($"^{customExitCommand}$",
-                                                                 (_, _, _) => { _isExitRequested = true; _signalHandled?.SetResult("#"); });
+                                                                 SignalHandler.Create( () => { _isExitRequested = true; _signalHandled?.SetResult("#"); } ));
 
                 // Setup completed.
                 // Loop until exit is requested:
@@ -113,11 +113,11 @@ namespace Temporal.Sdk.BasicSamples
                         foreach(string targetState in validTargetStates)
                         {
                             workflowCtx.DynamicControl.SignalHandlers.TryAdd($"^{_transitionPrefix}{targetState}$",
-                                                                             (signalName, _, _) => 
+                                                                             SignalHandler.Create( (signalName) => 
                                                                              {
                                                                                  ClearTransitionHandlers(workflowCtx);                                                                                 
                                                                                  _signalHandled.SetResult(targetState);
-                                                                             });
+                                                                             }));
                         }
                     }
 
@@ -139,7 +139,7 @@ namespace Temporal.Sdk.BasicSamples
 
             private void ClearTransitionHandlers(DynamicWorkflowContext workflowCtx)
             {
-                IHandlerCollection<Action<string, IDataValue, DynamicWorkflowContext>> handlers = workflowCtx.DynamicControl.SignalHandlers;
+                IHandlerCollection<Func<string, IDataValue, DynamicWorkflowContext, Task>> handlers = workflowCtx.DynamicControl.SignalHandlers;
                 int i = handlers.Count - 1;
                 while (i >= 0)
                 {

@@ -36,6 +36,20 @@ namespace Temporal.Worker.Workflows.Dynamic
         }
 
         public abstract Task<TResult> RunAsync(TInput input, DynamicWorkflowContext workflowCtx);
+
+        public sealed override PayloadsCollection HandleQuery(string queryName, PayloadsCollection input, WorkflowContext workflowCtx)
+        {
+            // Handle query as specified by the dynamic workflow APIs. If none of the configured handlers or the default pocily applies,
+            // fall back to the base implementation.
+            return base.HandleQuery(queryName, input, workflowCtx);            
+        }
+
+        public sealed override Task HandleSignalAsync(string signalName, PayloadsCollection input, WorkflowContext workflowCtx)
+        {
+            // Handle signal as specified by the dynamic workflow APIs. If none of the configured handlers or the default pocily applies,
+            // fall back to the base implementation.
+            return base.HandleSignalAsync(signalName, input, workflowCtx);
+        }
     }
 
     public abstract class DynamicWorkflowBase : DynamicWorkflowBase<IDataValue.Void, IDataValue.Void>    
@@ -51,7 +65,7 @@ namespace Temporal.Worker.Workflows.Dynamic
 
 
     public abstract class DynamicWorkflowBase<TResult>: DynamicWorkflowBase<IDataValue.Void, TResult>
-            where TResult : IDataValue
+                where TResult : IDataValue
     {
         public sealed override async Task<TResult> RunAsync(IDataValue.Void _, DynamicWorkflowContext workflowCtx)
         {
@@ -61,16 +75,6 @@ namespace Temporal.Worker.Workflows.Dynamic
         
         public abstract Task<TResult> RunAsync(DynamicWorkflowContext workflowCtx);
     }
-
-    //public abstract class DynamicWorkflowBase<TInput, TResult> : DynamicWorkflowInternalBase<TInput, TResult>
-    //        where TInput : IDataValue where TResult : IDataValue
-    //{
-    //    internal protected override Task<TResult> RunIternalAsync(TInput input, WorkflowContext workflowCtx)
-    //    {
-    //        return RunDynamicAsync(input, workflowCtx);
-    //    }
-    //    public abstract Task<TResult> RunDynamicAsync(TInput input, WorkflowContext workflowCtx);
-    //}
 
     // ---
 
@@ -96,8 +100,8 @@ namespace Temporal.Worker.Workflows.Dynamic
     /// This will likely be ignoring the signal logging an error.</summary>
     public interface IDynamicWorkflowController
     {
-        IHandlerCollection<Action<string, IDataValue, DynamicWorkflowContext>> SignalHandlers { get; }
-        IHandlerCollection<Func<string, IDataValue, DynamicWorkflowContext, Task<IDataValue>>> QueryHandlers { get; }
+        IHandlerCollection<Func<string, IDataValue, DynamicWorkflowContext, Task>> SignalHandlers { get; }
+        IHandlerCollection<Func<string, IDataValue, DynamicWorkflowContext, IDataValue>> QueryHandlers { get; }
 
         SignalHandlingOrderPolicy SignalHandlingOrderPolicy { get; set; }
 
@@ -169,7 +173,7 @@ namespace Temporal.Worker.Workflows.Dynamic
     public class SignalHandlerDefaultPolicy
     {
         public static SignalHandlerDefaultPolicy CacheAndProcessWhenHandlerIsSet(string matcherRegex) { return null; }
-        public static SignalHandlerDefaultPolicy CustomHandler(string matcherRegex, Action<string, IDataValue, DynamicWorkflowContext> handler) { return null; }
+        public static SignalHandlerDefaultPolicy CustomHandler(string matcherRegex, Func<string, IDataValue, DynamicWorkflowContext, Task> handler) { return null; }
         public static SignalHandlerDefaultPolicy Ignore(string matcherRegex) { return null; }
         public static SignalHandlerDefaultPolicy None() { return null; }
 
@@ -183,12 +187,109 @@ namespace Temporal.Worker.Workflows.Dynamic
     public class QueryHandlerDefaultPolicy
     {
         public static QueryHandlerDefaultPolicy ConstantResultValue(string matcherRegex, IDataValue resultValue) { return null; }
-        public static QueryHandlerDefaultPolicy CustomHandler(string matcherRegex, Func<string, IDataValue, DynamicWorkflowContext, Task<IDataValue>> handler) { return null; }
+        public static QueryHandlerDefaultPolicy CustomHandler(string matcherRegex, Func<string, IDataValue, DynamicWorkflowContext, IDataValue> handler) { return null; }
         public static QueryHandlerDefaultPolicy CustomError(string matcherRegex, Func<string, IDataValue, Exception> errorFactory) { return null; }
         public static QueryHandlerDefaultPolicy None() { return null; }
 
         public string Name { get; }
         public string MatcherRegex { get; }
         public bool IsMatch(string queryName) { return false; }
+    }
+
+    public static class SignalHandler
+    {
+        public static Func<string, IDataValue, DynamicWorkflowContext, Task> Create(Action handler)
+        {
+            return (_, _, _) => Adapter(handler);
+        }
+
+        public static Func<string, IDataValue, DynamicWorkflowContext, Task> Create(Action<string> handler)
+        {
+            return (signalName, _, _) => Adapter(handler, signalName);
+        }
+
+        public static Func<string, IDataValue, DynamicWorkflowContext, Task> Create<TInput>(Action<string, TInput> handler) where TInput : IDataValue
+        {
+            return null;
+        }
+
+        public static Func<string, IDataValue, DynamicWorkflowContext, Task> Create(Func<Task> handler)
+        {
+            return (_, _, _) => Adapter(handler);
+        }
+
+        public static Func<string, IDataValue, DynamicWorkflowContext, Task> Create(Func<string, Task> handler)
+        {
+            return (signalName, _, _) => Adapter(handler, signalName);
+        }
+
+        public static Func<string, IDataValue, DynamicWorkflowContext, Task> Create<TInput>(Func<string, TInput, Task> handler) where TInput : IDataValue
+        {
+            return null;
+        }
+
+        public static Func<string, IDataValue, DynamicWorkflowContext, Task> Create<TInput>(Func<string, TInput, DynamicWorkflowContext, Task> handler) where TInput : IDataValue
+        {
+            return null;
+        }
+
+        private static Task Adapter(Action handler)
+        {
+            handler();
+            return Task.CompletedTask;            
+        }
+
+        private static Task Adapter(Action<string> handler, string signalName)
+        {
+            handler(signalName);
+            return Task.CompletedTask;            
+        }
+
+        private static Task Adapter(Func<Task> handler)
+        {
+            return handler();            
+        }
+
+        private static Task Adapter(Func<string, Task> handler, string signalName)
+        {
+            return handler(signalName);
+        }
+    }
+
+    public static class QueryHandler
+    {
+        public static Func<string, IDataValue, DynamicWorkflowContext, IDataValue> Create<TResult>(Func<TResult> handler) where TResult : IDataValue
+        {
+            return (_, _, _) => Adapter(handler);
+        }
+
+        public static Func<string, IDataValue, DynamicWorkflowContext, IDataValue> Create<TResult>(Func<string, TResult> handler) where TResult : IDataValue
+        {
+            return (queryName, _, _) => Adapter(handler, queryName);
+        }
+
+        public static Func<string, IDataValue, DynamicWorkflowContext, IDataValue> Create<TInput, TResult>(Func<string, TInput, TResult> handler)
+                    where TInput : IDataValue
+                    where TResult : IDataValue
+        {
+            return null;
+        }
+
+        public static Func<string, IDataValue, DynamicWorkflowContext, IDataValue> Create<TInput, TResult>(Func<string, TInput, DynamicWorkflowContext, TResult> handler)
+                    where TInput : IDataValue
+                    where TResult : IDataValue
+        {
+            return null;
+        }
+
+        private static TResult Adapter<TResult>(Func<TResult> handler) where TResult : IDataValue
+        {
+            return handler();        
+        }
+
+        private static TResult Adapter<TResult>(Func<string, TResult> handler, string queryName) where TResult : IDataValue
+        {
+            return handler(queryName);
+        }
     }
 }
