@@ -97,6 +97,16 @@ namespace Temporal.Worker.Hosting
                                                        Func<IServiceProvider, Func<WorkflowActivityContext, Task>> activityImplementationFactory)
         { return null; }
 
+        public static ActivityRegistration AddActivity(this IServiceCollection serviceCollection,
+                                                       string activityTypeName,
+                                                       Action<WorkflowActivityContext> activityImplementation)
+        { return null; }
+
+        public static ActivityRegistration AddActivity(this IServiceCollection serviceCollection,
+                                                       string activityTypeName,
+                                                       Func<IServiceProvider, Action<WorkflowActivityContext>> activityImplementationFactory)
+        { return null; }
+
         public static ActivityRegistration AddActivity<TArg>(this IServiceCollection serviceCollection,
                                                              string activityTypeName,
                                                              Func<TArg, WorkflowActivityContext, Task> activityImplementation)
@@ -106,6 +116,18 @@ namespace Temporal.Worker.Hosting
         public static ActivityRegistration AddActivity<TArg>(this IServiceCollection serviceCollection,
                                                              string activityTypeName,
                                                              Func<IServiceProvider, Func<TArg, WorkflowActivityContext, Task>> activityImplementationFactory)
+                                            where TArg : IDataValue
+        { return null; }
+
+        public static ActivityRegistration AddActivity<TArg>(this IServiceCollection serviceCollection,
+                                                             string activityTypeName,
+                                                             Action<TArg, WorkflowActivityContext> activityImplementation)
+                                            where TArg : IDataValue
+        { return null; }
+
+        public static ActivityRegistration AddActivity<TArg>(this IServiceCollection serviceCollection,
+                                                             string activityTypeName,
+                                                             Func<IServiceProvider, Action<TArg, WorkflowActivityContext>> activityImplementationFactory)
                                             where TArg : IDataValue
         { return null; }
 

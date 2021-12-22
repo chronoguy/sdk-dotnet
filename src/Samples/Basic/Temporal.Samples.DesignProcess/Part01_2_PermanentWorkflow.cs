@@ -13,7 +13,7 @@ namespace Temporal.Sdk.BasicSamples
 {
     public class Part01_2_PermanentWorkflow
     {
-        [Workflow(runMethod: nameof(RunAsync))]
+        [Workflow(runMethod: nameof(SpeakUntilCancelledAsync))]
         public class SayGreetingWorkflow
         {            
             private const int SingleWorkflowRunIterations = 10000;
@@ -21,7 +21,7 @@ namespace Temporal.Sdk.BasicSamples
 
             private TaskCompletionSource<string> _setAddresseeName = new TaskCompletionSource<string>();
             
-            public async Task RunAsync(SpeechRequest greetingUtterance, WorkflowContext workflowCtx)
+            public async Task SpeakUntilCancelledAsync(SpeechRequest greetingUtterance, WorkflowContext workflowCtx)
             {
                 try
                 {
@@ -30,7 +30,7 @@ namespace Temporal.Sdk.BasicSamples
                         string addresseeName = await GetAddresseeNameAsync();
 
                         var greeting = new SpeechRequest($"{greetingUtterance.Text ?? "Hello"}, {addresseeName ?? AddresseeNameDefault}.");
-                        await workflowCtx.Orchestrator.Activities.ExecuteAsync(ActivityNames.SpeakGreeting, greeting);
+                        await workflowCtx.Orchestrator.Activities.ExecuteAsync(RemoteApiNames.Activities.SpeakGreeting, greeting);
                     }
                 }
                 catch(TaskCanceledException tcEx)
@@ -79,9 +79,12 @@ namespace Temporal.Sdk.BasicSamples
             }
         }
 
-        public static class ActivityNames
+        public static class RemoteApiNames
         {
-            public const string SpeakGreeting = "SpeakAGreeting";
+            public static class Activities
+            {
+                public const string SpeakGreeting = "SpeakAGreeting";
+            }            
         }
 
         /// <summary>
@@ -119,7 +122,7 @@ namespace Temporal.Sdk.BasicSamples
 
                         serviceCollection.AddWorkflowWithAttributes<SayGreetingWorkflow>();
 
-                        serviceCollection.AddActivity<SpeechRequest>(ActivityNames.SpeakGreeting, Speak.GreetingAsync);
+                        serviceCollection.AddActivity<SpeechRequest>(RemoteApiNames.Activities.SpeakGreeting, Speak.GreetingAsync);
                     })
                     .Build();
 

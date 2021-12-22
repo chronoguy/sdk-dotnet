@@ -59,7 +59,12 @@ namespace Temporal.Worker.Workflows
         Task<PayloadsCollection> ExecuteAsync(string activityName, PayloadsCollection activityArguments, CancellationToken cancelToken);
         Task<PayloadsCollection> ExecuteAsync(string activityName, PayloadsCollection activityArguments, IActivityInvocationConfiguration invocationConfig);
         Task<PayloadsCollection> ExecuteAsync(string activityName, PayloadsCollection activityArguments, CancellationToken cancelToken, IActivityInvocationConfiguration invocationConfig);
-        
+
+        Task ExecuteAsync(string activityName);
+        Task ExecuteAsync(string activityName, CancellationToken cancelToken);
+        Task ExecuteAsync(string activityName, IActivityInvocationConfiguration invocationConfig);
+        Task ExecuteAsync(string activityName, CancellationToken cancelToken, IActivityInvocationConfiguration invocationConfig);
+
         Task ExecuteAsync<TArg>(string activityName, TArg activityArguments) where TArg : IDataValue;
         Task ExecuteAsync<TArg>(string activityName, TArg activityArguments, CancellationToken cancelToken) where TArg : IDataValue;
         Task ExecuteAsync<TArg>(string activityName, TArg activityArguments, IActivityInvocationConfiguration invocationConfig) where TArg : IDataValue;
@@ -80,16 +85,25 @@ namespace Temporal.Worker.Workflows
 
     public interface IDeterministicApi
     {
+        DateTime DateTimeUtcNow { get; }
+
         Random CreateNewRandom();
         Guid CreateNewGuid();
+        CancellationTokenSource CreateNewCancellationTokenSource();
+        CancellationTokenSource CreateNewCancellationTokenSource(TimeSpan delay);
     }
 
     public class DeterministicApi : IDeterministicApi
     {
+        public DateTime DateTimeUtcNow { get; }
+
         public Random CreateNewRandom() { return null; }
 
         public Guid CreateNewGuid() { return default(Guid); }
-    }
+
+        public CancellationTokenSource CreateNewCancellationTokenSource() { return null; }
+        public CancellationTokenSource CreateNewCancellationTokenSource(TimeSpan delay) { return null; }
+}
 
     // ----------- -----------
 

@@ -15,7 +15,7 @@ namespace Temporal.Sdk.BasicSamples
         // This sample is equivalent to:
         // https://github.com/temporalio/samples-java/blob/main/src/main/java/io/temporal/samples/hello/HelloPeriodic.java
 
-        [Workflow(runMethod: nameof(RunAsync), WorkflowTypeName = WorkflowApiNames.PeriodicGreetingWorkflow)]
+        [Workflow(runMethod: nameof(GreetRegularlyAsync), WorkflowTypeName = RemoteApiNames.GreetingWorkflow.TypeName)]
         public class HelloPeriodicWorkflow
         {
             private const int SchedulePeriodTargetSecs = 5;
@@ -26,7 +26,7 @@ namespace Temporal.Sdk.BasicSamples
 
             private TaskCompletionSource _requestExit = new TaskCompletionSource();
 
-            public async Task RunAsync(SpeechRequest nameInfo, WorkflowContext workflowCtx)
+            public async Task GreetRegularlyAsync(SpeechRequest nameInfo, WorkflowContext workflowCtx)
             {
                 string name = nameInfo?.Text ?? AddresseeNameDefault;
                 Random rnd = workflowCtx.DeterministicApi.CreateNewRandom();
@@ -51,14 +51,14 @@ namespace Temporal.Sdk.BasicSamples
                                                  workflowCtx);
 
                         workflowCtx.Orchestrator.ConfigureContinueAsNew(startNewRunAfterReturn: false);
-                        return;
+                        return;                        
                     }
                 }
             }
             
             private Task SpeakGreetingAsync(string greetingText, WorkflowContext workflowCtx)
             {
-                return workflowCtx.Orchestrator.Activities.ExecuteAsync(WorkflowApiNames.SpeakGreetingActivity, new SpeechRequest(greetingText));
+                return workflowCtx.Orchestrator.Activities.ExecuteAsync(RemoteApiNames.Activities.SpeakGreeting, new SpeechRequest(greetingText));
             }
 
             [WorkflowSignal]
@@ -78,10 +78,17 @@ namespace Temporal.Sdk.BasicSamples
             }
         }
 
-        public static class WorkflowApiNames
+        public static class RemoteApiNames
         {
-            public const string SpeakGreetingActivity = "SpeakAGreeting";
-                public const string PeriodicGreetingWorkflow = "GreetingWorkflow";
+            public static class Activities
+            {
+                public const string SpeakGreeting = "SpeakAGreeting";
+            }
+
+            public static class GreetingWorkflow
+            {                
+                public const string TypeName = "GreetingWorkflow";
+            }
         }
 
         /// <summary>
@@ -119,7 +126,7 @@ namespace Temporal.Sdk.BasicSamples
 
                         serviceCollection.AddWorkflowWithAttributes<HelloPeriodicWorkflow>();
 
-                        serviceCollection.AddActivity<SpeechRequest>(WorkflowApiNames.SpeakGreetingActivity, Speak.GreetingAsync);
+                        serviceCollection.AddActivity<SpeechRequest>(RemoteApiNames.Activities.SpeakGreeting, Speak.GreetingAsync);
                     })
                     .Build();
 

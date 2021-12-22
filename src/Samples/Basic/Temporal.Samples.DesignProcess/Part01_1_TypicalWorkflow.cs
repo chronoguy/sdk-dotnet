@@ -12,14 +12,14 @@ namespace Temporal.Sdk.BasicSamples
 {
     public class Part01_1_TypicalWorkflow
     {
-        [Workflow(runMethod: nameof(RunAsync))]
+        [Workflow(runMethod: nameof(SayHelloAsync))]
         public class SayHelloWorkflow
         {
             private const string AddresseeNameDefault = "Boss";
 
             private string _addresseeName = null;
 
-            public async Task RunAsync(WorkflowContext workflowCtx)
+            public async Task SayHelloAsync(WorkflowContext workflowCtx)
             {
                 var greeting = new SpeechRequest($"Hello, {_addresseeName ?? AddresseeNameDefault}.");                
                 await workflowCtx.Orchestrator.Activities.ExecuteAsync("SpeakAGreeting", greeting);
