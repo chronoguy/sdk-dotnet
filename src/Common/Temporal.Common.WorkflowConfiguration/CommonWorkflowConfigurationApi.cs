@@ -24,17 +24,9 @@ namespace Temporal.Common.WorkflowConfiguration
 
         // Add:
         // workflowIdReusePolicy, workflowRunTimeout, workflowExecutionTimeout
+        // taskQueue, retryOptions, cronSchedule, memo, searchAttributes
 
-        
-
-        //private String taskQueue;
-
-        //private RetryOptions retryOptions;
-
-        //private String cronSchedule;
-
-        //private Map<String, Object> memo;
-
-        //private Map<String, Object> searchAttributes;
+        // Do NOT add:
+        // workflow / run id, namespace, workflow type
     }
 }
