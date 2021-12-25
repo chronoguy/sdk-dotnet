@@ -2,7 +2,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-using Temporal.CommonDataModel;
+using Temporal.Common.WorkflowConfiguration;
+using Temporal.Common.DataModel;
 using Temporal.Serialization;
 
 namespace Temporal.Worker.Workflows
@@ -128,23 +129,22 @@ namespace Temporal.Worker.Workflows
     /// <summary>
     /// Per-workflow settings related to the execution container of a workflow.
     /// Must not affect the business logic.
-    /// Think: if the same workflow was run on a different host, these may be different.
+    /// These may optionally be set by both: by the client that stated a workflow OR by the workflow host (globally or for a specific workflow).
+    /// If set in several places, these settings will be merged before being applied to a specific workflow at the time of starting it.
+    /// Once started, they need to be read-only.
     /// Example: Timeouts.
-    /// </summary>
-    public interface IWorkflowExecutionConfiguration
-    {
-        int WorkflowTaskTimeoutMillisec { get; }
-    }
-
+    /// </summary>   
     public class WorkflowExecutionConfiguration : IWorkflowExecutionConfiguration
     {
         public int WorkflowTaskTimeoutMillisec { get; set; }
     }
 
     /// <summary>
-    /// Per-workflow settings related to the business logic of a workflow.
+    /// Per-workflow settings related to the business logic and/or the execution container of a workflow.
     /// May affect the business logic.
-    /// Think: if the same workflow was run on a different host, these must be the same.
+    /// These settings are set on the worker/host (globally or for a specific workflow), not by the client invoking the workflow.
+    /// If set in on several layers/levels in the host, these settings will be merged before being applied to a specific workflow
+    /// at the time of starting it. Once started, they need to be read-only.    
     /// Example: Serializer.
     /// </summary>
     public interface IWorkflowImplementationConfiguration

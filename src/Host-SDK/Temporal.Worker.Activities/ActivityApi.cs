@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-using Temporal.CommonDataModel;
+using Temporal.Common.DataModel;
 using Temporal.Serialization;
 
 namespace Temporal.Worker.Activities

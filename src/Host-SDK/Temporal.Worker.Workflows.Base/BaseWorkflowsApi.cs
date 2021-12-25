@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-using Temporal.CommonDataModel;
+using Temporal.Common.DataModel;
 
 namespace Temporal.Worker.Workflows.Base
 {

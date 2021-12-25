@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Hosting;
 
-using Temporal.CommonDataModel;
+using Temporal.Common.DataModel;
 using Temporal.Worker.Activities;
 using Temporal.Worker.Hosting;
 using Temporal.Worker.Workflows;

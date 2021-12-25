@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-using Temporal.CommonDataModel;
+using Temporal.Common.DataModel;
 using Temporal.Worker.Workflows.Base;
 
 namespace Temporal.Worker.Workflows.Dynamic

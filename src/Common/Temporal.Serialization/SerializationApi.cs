@@ -1,5 +1,5 @@
 ﻿using System;
-using Temporal.CommonDataModel;
+using Temporal.Common.DataModel;
 
 namespace Temporal.Serialization
 {

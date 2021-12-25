@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
-using Temporal.CommonDataModel;
+using Temporal.Common.DataModel;
 using Temporal.Serialization;
 using Temporal.Worker.Hosting;
 using Temporal.Worker.Workflows;
