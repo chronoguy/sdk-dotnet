@@ -44,4 +44,9 @@ namespace Temporal.Common.DataModel
         public IReadOnlyDictionary<string, Stream> Metadata { get; }
         public Stream Data { get; }
     }
+
+    public enum WorkflowExecutionStatus
+    {
+
+    }
 }

@@ -10,7 +10,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Client-SDK\Temporal.Sdk.WorkflowClient.csproj" />
-    <ProjectReference Include="..\..\Host-SDK\Temporal.Sdk.Worker.csproj" />    
+    <ProjectReference Include="..\..\Host-SDK\Temporal.Sdk.Worker.csproj" />
+    <ProjectReference Include="..\..\Utilities\Temporal.Util.csproj" />    
   </ItemGroup>
 
 </Project>
