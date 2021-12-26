@@ -11,8 +11,45 @@ using Temporal.Worker.Workflows;
 
 namespace Temporal.Sdk.BasicSamples
 {
-    public class Part01_4_TimersAndComposition2
-    {        
+    public class Part1_5_AttributesAndInterfaces
+    {
+        public interface IRestaurantOrder
+        {
+            Task HaveMealAsync(ReservationInfo reservation, WorkflowContext workflowCtx);
+
+            [WorkflowQuery]
+            Bill GetBill();
+
+
+        }
+
+        public interface IFoodOrder : IRestaurantOrder
+        {
+            
+        }
+
+        public interface IDrinkOrder : IRestaurantOrder
+        {
+
+        }
+
+        public interface ITippableService
+        {
+            void AddTip(int dollarCents);
+        }
+
+        public record Bill(int BillDollarCents, double TaxPercent, int TipDollarCents) : IDataValue
+        {
+            public int TotalDollarCents { get { return BillDollarCents + (int) Math.Round(BillDollarCents / 100.0 * TaxPercent) + TipDollarCents; } }
+            public int TotalWholeDollars { get { return TotalDollarCents / 100; } }
+            public int TotalSubdollarCents { get { return TotalDollarCents % 100; } }
+        }
+
+        public record Person(string Name) : IDataValue;
+        
+        public record ReservationInfo(int PartySize, bool IsTableReserved) : IDataValue;
+        
+
         [Workflow(runMethod: nameof(CountdownAsync))]
         public class CountdownTimer
         {
@@ -23,7 +60,7 @@ namespace Temporal.Sdk.BasicSamples
             private TaskCompletionSource _requestAbort = new TaskCompletionSource();
             private TaskCompletionSource<DateTime> _updateTarget = new TaskCompletionSource<DateTime>();
 
-            public async Task<CountdownResult> CountdownAsync(TargetTimePayload target, WorkflowContext workflowCtx)
+            public async Task<bool> CountdownAsync(TargetTimePayload target, WorkflowContext workflowCtx)
             {
                 _targetTimeUtc = target.UtcDateTime;
 
@@ -46,13 +83,13 @@ namespace Temporal.Sdk.BasicSamples
                     {
                         // If the target time is reached, use an activity to notify and then complete the workflow.
                         await workflowCtx.Orchestrator.Activities.ExecuteAsync(RemoteApiNames.Activities.DisplayCompletion);
-                        return new CountdownResult(true);
+                        return true;
                     }
 
                     if (_requestAbort.Task.IsCompleted)
                     {
                         // If the workflow is aborted via a signal, quit now.
-                        return new CountdownResult(true);
+                        return false;
                     }
 
                     if (stepTask.IsCompleted)
@@ -139,12 +176,25 @@ namespace Temporal.Sdk.BasicSamples
             }
         }
         
-        public record TargetTimePayload(DateTime UtcDateTime) : IDataValue;
+        public class TargetTimePayload : IDataValue
+        {
+            public DateTime UtcDateTime { get; set; }
 
-        public record DisplayRemainingStepsPayload(int Steps) : IDataValue;
+            public TargetTimePayload(DateTime utcDateTime)
+            {
+                UtcDateTime = utcDateTime;
+            }
+        }
 
-        public record CountdownResult(bool IsTargetTimeReached) : IDataValue;
+        public class DisplayRemainingStepsPayload : IDataValue
+        {
+            public int Steps { get; set; }
 
+            public DisplayRemainingStepsPayload(int steps)
+            {
+                Steps = steps;
+            }
+        }
 
         public static void Main(string[] args)
         {

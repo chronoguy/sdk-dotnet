@@ -11,7 +11,7 @@ using Temporal.Worker.Workflows;
 
 namespace Temporal.Sdk.BasicSamples
 {
-    public class Part01_2_PermanentWorkflow
+    public class Part1_2_PermanentWorkflow
     {
         [Workflow(runMethod: nameof(SpeakUntilCancelledAsync))]
         public class SayGreetingWorkflow
@@ -90,7 +90,7 @@ namespace Temporal.Sdk.BasicSamples
         /// <summary>
         /// Parameters to workflow APIs (main method, signal & query parameters) and to activities must implement <see cref="IDataValue" />.
         /// In some specialized cases where it is not possible, the raw (non-deserialized) payload may be accessed
-        /// directly (e.g. <see cref="Part04_1_BasicWorkflowUsage" /> and <see cref="Part04_2_BasicWorkflowUsage_MultipleWorkers" />).
+        /// directly (e.g. <see cref="Part4_1_BasicWorkflowUsage" /> and <see cref="Part4_2_BasicWorkflowUsage_MultipleWorkers" />).
         /// </summary>
         public class SpeechRequest : IDataValue
         {

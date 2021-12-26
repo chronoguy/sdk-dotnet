@@ -20,9 +20,9 @@ namespace Temporal.Sdk.BasicSamples
     /// Examples:
     ///  - a different way to map attributed interfaces or classes to temporal messages
     ///  - a different appoach to implementing a dynamic workflow to the one offered by our framework
-    ///  For a TYPICAL workflow implementation that we WILL guide users towards, see <see cref="Part01_1_TypicalWorkflow"/>.
+    ///  For a TYPICAL workflow implementation that we WILL guide users towards, see <see cref="Part1_1_TypicalWorkflow"/>.
     /// </summary>
-    public class Part04_1_BasicWorkflowUsage
+    public class Part4_1_BasicWorkflowUsage
     {       
         public class SayHelloWorkflow : BasicWorkflowBase
         {

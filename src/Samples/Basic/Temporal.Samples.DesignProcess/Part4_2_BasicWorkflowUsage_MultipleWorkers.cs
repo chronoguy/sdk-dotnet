@@ -12,10 +12,10 @@ using Temporal.Worker.Workflows.Base;
 namespace Temporal.Sdk.BasicSamples
 {
     /// <summary>
-    /// Some very simple workflows. The level of abstraction is the same as in <see cref="Part04_1_BasicWorkflowUsage" />.
+    /// Some very simple workflows. The level of abstraction is the same as in <see cref="Part4_1_BasicWorkflowUsage" />.
     /// Here, we focus on multiple workers per process.    
     /// </summary>
-    public class Part04_2_BasicWorkflowUsage_MultipleWorkers
+    public class Part4_2_BasicWorkflowUsage_MultipleWorkers
     {
         public class SayHelloWorkflow : BasicWorkflowBase
         {            

@@ -3,11 +3,11 @@ using System.Threading.Tasks;
 using Temporal.Common.DataModel;
 using Temporal.WorkflowClient;
 
-using static Temporal.Sdk.BasicSamples.Part01_4_TimersAndComposition2;
+using static Temporal.Sdk.BasicSamples.Part1_4_TimersAndComposition2;
 
 namespace Temporal.Sdk.BasicSamples
 {
-    public class Part02_1_ClientStartsAndUsesWorkflow
+    public class Part2_1_ClientStartsAndUsesWorkflow
     {
         public static void Main(string[] args)
         {
