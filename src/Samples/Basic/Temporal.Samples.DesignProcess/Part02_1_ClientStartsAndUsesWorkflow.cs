@@ -7,9 +7,8 @@ using static Temporal.Sdk.BasicSamples.Part01_4_TimersAndComposition2;
 
 namespace Temporal.Sdk.BasicSamples
 {
-    public class Part02_1_StartAndUseWorkflow
+    public class Part02_1_ClientStartsAndUsesWorkflow
     {
-        
         public static void Main(string[] args)
         {
             Minimal(args).GetAwaiter().GetResult();
@@ -18,6 +17,7 @@ namespace Temporal.Sdk.BasicSamples
             AccessResultOfWorkflowRun(args).GetAwaiter().GetResult();
             AccessResultOfEntireWorkflow(args).GetAwaiter().GetResult();
             UseSignalsAndQueries(args).GetAwaiter().GetResult();
+            CancelCurrentWorkflowRunIfActive(args).GetAwaiter().GetResult();
         }
 
         public static async Task Minimal(string[] _)
