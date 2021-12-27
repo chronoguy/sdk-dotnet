@@ -96,6 +96,13 @@ namespace Temporal.WorkflowClient
 
         public Task<IPaginatedReadOnlyCollectionPage<WorkflowRun>> ListRunsAsync(NeedsDesign oneOrMoreArgs) { return null; }
 
+        #region TerminateAsync(..)
+        public Task TerminateAsync(string reason) { return null; }
+        public Task TerminateAsync(string reason, PayloadsCollection details, CancellationToken cancelToken) { return null; }
+        public Task TerminateAsync(string reason, IDataValue details, CancellationToken cancelToken) { return null; }
+        #endregion TerminateAsync(..)
+
+
         #region StartNewRunAsync(..)
         public Task<WorkflowRun> StartNewRunAsync(string taskQueueMoniker) { return null; }
         public Task<WorkflowRun> StartNewRunAsync(string taskQueueMoniker, CancellationToken cancelToken) { return null; }
