@@ -24,7 +24,7 @@ namespace Temporal.WorkflowClient
     /// 
     /// If a RunMethodStub is invoked on a stub instance that is NOT yet bound to a workflow run, it will attempt to bind the stub
     /// instance to the first option permitted by both, the 'WorkflowRunStubConfiguration' specified to the stab creation method and
-    /// the settings of this attribute in the follwing order:
+    /// the settings of this attribute in the following order:
     ///   1) Bind to an existing Active run
     ///   2) Start a New run and bind to it
     ///   3) Bind to an existing Finished run
@@ -43,7 +43,7 @@ namespace Temporal.WorkflowClient
     /// then the Task returned by a RunMethodStub represents the completion of the ENTIRE workflow, including the as-new continuations
     /// of the current run.
     /// 
-    /// This and other 'WorkflowXxxStub' attributes can only be applied to method definitions in intercafes.
+    /// This and other 'WorkflowXxxStub' attributes can only be applied to method definitions in interfaces.
     /// They are ignored in classes.
     /// This and other 'WorkflowXxxStub' are interpreted by the workflow client SDK. They do NOT configure how
     /// workflow implementations are hosted by the worker. However, if a worker host loads a workflow that implements interfaces
@@ -51,7 +51,7 @@ namespace Temporal.WorkflowClient
     /// handlers for APIs defined by the 'WorkflowXxxStub' attributes.
     /// 
     /// Note that the signatures required for a 'WorkflowXxxStubAttribute' may be different from the corresponding 'WorkflowXxxHandlerAttribute'.
-    /// For examples, queries are async from the client perpective, but must be handled synchronously in the implementation.
+    /// For examples, queries are async from the client perspective, but must be handled synchronously in the implementation.
     ///     
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]

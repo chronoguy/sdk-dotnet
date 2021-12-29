@@ -178,7 +178,53 @@ namespace Temporal.Worker.Workflows
 
     // ----------- -----------
 
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface, Inherited = true, AllowMultiple = true)]
+    /// <summary>
+    /// Specifies that a class is an implementation of a workflow that can be hosted by the worker.
+    /// 
+    /// Can only be applied to classes. Ifaces and structs are not permitted.
+    /// Inheritance is supported.
+    /// If multiple Workflow attributes are present within a class due to inheritance, the most derived wins.
+    /// 
+    /// If 'WorkflowTypeName' is not specified OR null OR Empty OR WhiteSpaceOnly, then the workflow type name is auto-populated
+    /// by taking the class type name.
+    /// 
+    /// 'RunMethod' must be the name of the method that implements them main workflow Run method.
+    /// Such method must have one of the following signatures ("RunAsync" is a placeholder for any method name):
+    ///     Task RunAsync()
+    ///     Task RunAsync(WorkflowContext)
+    ///     Task RunAsync(TArg, WorkflowContext) where TArg : IDataValue
+    ///     Task{TResult} RunAsync() where TResult : IDataValue
+    ///     Task{TResult} RunAsync(WorkflowContext) where TResult : IDataValue
+    ///     Task{TResult} RunAsync(TArg, WorkflowContext) where TResult : IDataValue where TArg : IDataValue
+    ///     Task{PayloadsCollection} RunAsync()
+    ///     Task{PayloadsCollection} RunAsync(WorkflowContext)
+    ///     Task{PayloadsCollection} RunAsync(TArg, WorkflowContext) where TArg : IDataValue    
+    /// otherwise an error during worker initialization is generated.
+    /// 
+    /// If the method named by 'RunMethod' property is overloaded, the property must unambiguously specify a particular overload
+    /// by specifying the full signature. In such a case, either ALL or NONE of the types must use the fully qualified type names.
+    /// E.g., see <c>Part1_5_AttributesAndInterfaces</c>. There it would be sufficient to specify
+    /// 
+    /// <code>
+    ///     [Workflow(runMethod: "ShopAsync")]
+    /// </code>
+    /// 
+    /// since it is not ambiguous. Other valid options are:
+    /// 
+    /// <code>
+    ///     [Workflow(runMethod: "Task<Part1_5_AttributesAndInterfaces.OrderConfirmation> ShopAsync(Part1_5_AttributesAndInterfaces.User)")]
+    ///     [Workflow(runMethod: "System.Threading.Tasks.Task<Temporal.Sdk.BasicSamples.Part1_5_AttributesAndInterfaces.OrderConfirmation> ShopAsync(Temporal.Sdk.BasicSamples.Part1_5_AttributesAndInterfaces.User)")]
+    /// </code>
+    /// 
+    /// The following is will never be matched because it specifies a namespace for Task, but not for the other types:
+    /// (note that 'Part1_5_AttributesAndInterfaces' is the outer type, not the namespace, so it must always be present)
+    /// 
+    /// <code>
+    ///     [Workflow(runMethod: "System.Threading.Tasks.Task<Part1_5_AttributesAndInterfaces.OrderConfirmation> ShopAsync(Part1_5_AttributesAndInterfaces.User)")]
+    /// </code>
+    /// 
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = false)]
     public sealed class WorkflowAttribute : Attribute
     {
         public string RunMethod { get; }
@@ -196,6 +242,33 @@ namespace Temporal.Worker.Workflows
         }
     }
 
+
+    /// <summary>
+    /// Specifies that a method is an implementation of a signal handler.
+    /// Can only be applied to methods defined in classes. When applied inside ifaces or structs, an error will be generated.
+    /// Inheritance is supported. However, if a workflow ends up having any ambiguity (e.g. multiple handlers for a particular signal type
+    /// or other ambiguities), an error during worker initialization will be generated.
+    /// If multiple Workflow attributes are present within a class due to inheritance, the most derived wins.
+    /// 
+    /// If 'SignalTypeName' is not specified OR null OR Empty OR WhiteSpaceOnly, then the signal type name is auto-populated
+    /// by taking the method name and removing 'Async' from its end if present
+    /// (if that would result in an empty string, then 'Async' is not removed).
+    /// 
+    /// Multiple handlers for the same signal type name are prohibited.
+    /// 
+    /// The method signature must me one of the following:
+    ///     Task HandlerMethod()
+    ///     Task HandlerMethod(WorkflowContext workflowCtx)
+    ///     Task HandlerMethod(TArg handlerArgs, WorkflowContext workflowCtx) where TArg : IDataValue
+    ///     Task HandlerMethod(PayloadsCollection handlerArgs, WorkflowContext workflowCtx) : IDataValue
+    ///     void HandlerMethod()
+    ///     void HandlerMethod(WorkflowContext workflowCtx)
+    ///     void HandlerMethod(TArg handlerArgs, WorkflowContext workflowCtx) where TArg : IDataValue
+    ///     void HandlerMethod(PayloadsCollection handlerArgs, WorkflowContext workflowCtx) : IDataValue
+    /// otherwise an error during worker initialization is generated.
+    /// 
+    /// Stub attributes are ignores for all purposes other than validation.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
     public sealed class WorkflowSignalHandlerAttribute : Attribute
     {
@@ -203,6 +276,28 @@ namespace Temporal.Worker.Workflows
         public WorkflowSignalHandlerAttribute() { }
     }
 
+
+    /// <summary>
+    /// Specifies that a method is an implementation of a query handler.
+    /// Can only be applied to methods defined in classes. When applied inside ifaces or structs, an error will be generated.
+    /// Inheritance is supported. However, if a workflow ends up having any ambiguity (e.g. multiple handlers for a particular query type
+    /// or other ambiguities), an error during worker initialization will be generated.
+    /// If multiple Workflow attributes are present within a class due to inheritance, the most derived wins.
+    /// 
+    /// If 'QueryTypeName' is not specified OR null OR Empty OR WhiteSpaceOnly, then the query type name is auto-populated
+    /// by taking the method name and removing 'Async' from its end if present
+    /// (if that would result in an empty string, then 'Async' is not removed).
+    /// 
+    /// Multiple handlers for the same query type name are prohibited.
+    /// 
+    /// The method signature must me one of the following:
+    ///     TResult HandlerMethod() where TResult : IDataValue
+    ///     TResult HandlerMethod(WorkflowContext workflowCtx) where TResult : IDataValue
+    ///     TResult HandlerMethod(TArg handlerArgs, WorkflowContext workflowCtx) where TResult : IDataValue where TArg : IDataValue   
+    ///     PayloadsCollection HandlerMethod(PayloadsCollection handlerArgs, WorkflowContext workflowCtx) : IDataValue
+    /// otherwise an error during worker initialization is generated.
+    /// 
+    /// Stub attributes are ignores for all purposes other than validation.
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
     public sealed class WorkflowQueryHandlerAttribute : Attribute
     {

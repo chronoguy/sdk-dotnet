@@ -58,6 +58,10 @@ namespace Temporal.Sdk.BasicSamples
 
         // Workflow interfaces:
 
+        // These ifaces are used by the client (see 'Part2_2_IfaceBasedClient').
+        // If is not required for the worker-hosted workflow implementation to implment those interfaces.
+        // However, for the same of an example, it is done here.
+
         public interface IProductList
         {
             [WorkflowSignalStub]
@@ -66,7 +70,7 @@ namespace Temporal.Sdk.BasicSamples
             [WorkflowQueryStub]
             Task<Products> GetProductsAsync();
 
-            [WorkflowQueryStub(QueryTypeName = "GetTotalWithoutTax")]
+            [WorkflowQueryStub(QueryTypeName = RemoteApiNames.ShoppingCartWorkflow.Queries.GetTotalWithoutTax)]
             Task<MoneyAmount> GetTotalAsync();
         }
 
@@ -81,7 +85,7 @@ namespace Temporal.Sdk.BasicSamples
             [WorkflowSignalStub]
             Task SetDeliveryInfoAsync(DeliveryInfo deliveryInfo);
 
-            [WorkflowSignalStub(SignalTypeName = "Pay")]
+            [WorkflowSignalStub(SignalTypeName = RemoteApiNames.ShoppingCartWorkflow.Signals.Pay)]
             Task ApplyPaymentAsync(MoneyAmount amount);
 
             [WorkflowRunMethodStub]
@@ -93,22 +97,38 @@ namespace Temporal.Sdk.BasicSamples
 
         public static class RemoteApiNames
         {
-            public static class Activities
-            {
-                public const string DisplayRemainingSteps = "DisplayRemainingSteps";
-                public const string DisplayCompletion = "DisplayCompletion";
-            }
-
-            public static class CountdownTimerWorkflow
+            public static class ShoppingCartWorkflow
             {                
+                public static class Queries
+                {
+                    public const string GetTotalWithoutTax = "GetTotalWithoutTax";
+                }
+
                 public static class Signals
                 {
-                    public const string UpdateTargetTime = "UpdateTargetTime";
+                    public const string Pay = "Pay";
                 }
             }
         }
 
-        [Workflow(runMethod: "ShopAsync")]
+        /// <summary>
+        /// If is not required for the worker-hosted workflow implementation to implment those interfaces.
+        /// In fact, doing that can be awkward.
+        /// E.g.:
+        ///  - The client will not be aware of <see cref="WorkflowContext" /> parameters.
+        ///  - The signal handlers may be optionaly synchronous if they do not use any async APIs.
+        ///    But client stub for signals are always async.
+        ///  - The query handlers must be synchronous as they may not use any async APIs.
+        ///    But client stub for queries are always async.
+        ///  - ...
+        ///    
+        /// That is exemplified in this sample. The hosted workflow implements the client-side interfaces.
+        /// The superflous methods that would not otherwise be required are non-public.
+        /// The worker host does not pay attetion to WorkflowStubAttributes (other than for validation) and 
+        /// uses <see cref="WorkflowAttribute" />, <see cref="WorkflowSignalHandlerAttribute" /> and <see cref="WorkflowQueryHandlerAttribute" />
+        /// instead.
+        /// </summary>
+        [Workflow(runMethod: "Task<Part1_5_AttributesAndInterfaces.OrderConfirmation> ShopAsync(Part1_5_AttributesAndInterfaces.User)")]
         public class ShoppingCart : IShoppingCart
         {
             private User _owner = null;
@@ -135,7 +155,7 @@ namespace Temporal.Sdk.BasicSamples
                                               + $" is {nameof(ApplyPayment)}({nameof(MoneyAmount)}, {nameof(WorkflowContext)}).");
             }
 
-            [WorkflowSignalHandler(SignalTypeName = "Pay")]
+            [WorkflowSignalHandler(SignalTypeName = RemoteApiNames.ShoppingCartWorkflow.Signals.Pay)]
             public void ApplyPayment(MoneyAmount amount, WorkflowContext workflowContext)
             {
                 _appliedPayment = _appliedPayment + amount;
@@ -177,7 +197,7 @@ namespace Temporal.Sdk.BasicSamples
                 return Task.FromResult(GetTotal());
             }
 
-            [WorkflowQueryHandler(QueryTypeName = "GetTotalWithoutTax")]
+            [WorkflowQueryHandler(QueryTypeName = RemoteApiNames.ShoppingCartWorkflow.Queries.GetTotalWithoutTax)]
             public MoneyAmount GetTotal()
             {
                 MoneyAmount total = new(0, 0);
@@ -236,13 +256,7 @@ namespace Temporal.Sdk.BasicSamples
                                               + $" The workflow run method is {nameof(ShopAsync)}({nameof(User)}, {nameof(WorkflowContext)}).");
             }
 
-            Task<OrderConfirmation> IShoppingCart.ShopAsync(User shopper)
-            {
-                throw new NotSupportedException($"This {nameof(IShoppingCart)} implementation does not support this RunMethod-Stub."
-                                              + $" The workflow run method is {nameof(ShopAsync)}({nameof(User)}, {nameof(WorkflowContext)}).");
-            }
-
-            public async Task<OrderConfirmation> ShopAsync(User shopper, WorkflowContext workflowCtx)
+            public async Task<OrderConfirmation> ShopAsync(User shopper)
             {
                 _owner = shopper;
 
