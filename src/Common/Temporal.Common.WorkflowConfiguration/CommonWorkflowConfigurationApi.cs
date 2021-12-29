@@ -21,6 +21,7 @@ namespace Temporal.Common.WorkflowConfiguration
     public interface IWorkflowExecutionConfiguration
     {
         int WorkflowTaskTimeoutMillisec { get; }
+        string TaskQueueMoniker { get; }
 
         // Add:
         // workflowIdReusePolicy, workflowRunTimeout, workflowExecutionTimeout
@@ -28,5 +29,21 @@ namespace Temporal.Common.WorkflowConfiguration
 
         // Do NOT add:
         // workflow / run id, namespace, workflow type
+    }
+
+    /// <summary>
+    /// Per-workflow settings related to the execution container of a workflow.
+    /// Must not affect the business logic.
+    /// These may optionally be set by both: by the client that stated a workflow OR by the workflow host (globally or for a specific workflow).
+    /// If set in several places, these settings will be merged before being applied to a specific workflow at the time of starting it.
+    /// Once started, they need to be read-only.
+    /// Example: Timeouts.
+    /// </summary>   
+    public class WorkflowExecutionConfiguration : IWorkflowExecutionConfiguration
+    {
+        public int WorkflowTaskTimeoutMillisec { get; set; }
+        public string TaskQueueMoniker { get; set; }
+        public WorkflowExecutionConfiguration() { }
+        public WorkflowExecutionConfiguration(string taskQueueMoniker) { TaskQueueMoniker = taskQueueMoniker; }
     }
 }

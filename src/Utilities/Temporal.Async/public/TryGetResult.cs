@@ -18,6 +18,11 @@ namespace Temporal.Async
             _result = result;
         }
 
+        public T Result
+        {
+            get { return _result; }
+        }
+
         public bool IsSuccess()
         {
             return IsSuccess(out _);

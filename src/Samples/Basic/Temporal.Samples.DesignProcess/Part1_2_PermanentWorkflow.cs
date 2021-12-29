@@ -53,13 +53,13 @@ namespace Temporal.Sdk.BasicSamples
                 return addresseeName;
             }
 
-            [WorkflowSignal]
+            [WorkflowSignalHandler]
             public void SetAddressee(SpeechRequest input)
             {
                 _setAddresseeName.TrySetResult(input?.Text);                
             }
 
-            [WorkflowSignal]
+            [WorkflowSignalHandler]
             public void Cancel()
             {
                 while (!_setAddresseeName.TrySetCanceled())

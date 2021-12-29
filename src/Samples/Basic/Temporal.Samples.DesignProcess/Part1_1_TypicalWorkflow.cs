@@ -25,7 +25,7 @@ namespace Temporal.Sdk.BasicSamples
                 await workflowCtx.Orchestrator.Activities.ExecuteAsync("SpeakAGreeting", greeting);
             }
 
-            [WorkflowSignal]
+            [WorkflowSignalHandler]
             public Task SetAddresseeAsync(SpeechRequest input, WorkflowContext _)
             {
                 _addresseeName = input?.Text;

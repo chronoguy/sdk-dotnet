@@ -17,7 +17,7 @@ namespace Temporal.Sdk.BasicSamples
         {
             Task HaveMealAsync(ReservationInfo reservation, WorkflowContext workflowCtx);
 
-            [WorkflowQuery]
+            [WorkflowQueryHandler]
             Bill GetBill();
 
 
@@ -126,19 +126,19 @@ namespace Temporal.Sdk.BasicSamples
                 }
             }
 
-            [WorkflowQuery]
+            [WorkflowQueryHandler]
             public TargetTimePayload GetCurrentTargetTimeUtc()
             {
                 return new TargetTimePayload(_targetTimeUtc);
             }
 
-            [WorkflowSignal]
+            [WorkflowSignalHandler]
             public void RequestAbort()
             {
                 _requestAbort.TrySetResult();
             }
 
-            [WorkflowSignal(signalTypeName: RemoteApiNames.CountdownTimerWorkflow.Signals.UpdateTargetTime)]
+            [WorkflowSignalHandler(signalTypeName: RemoteApiNames.CountdownTimerWorkflow.Signals.UpdateTargetTime)]
             public void UpdateTarget(TargetTimePayload target)
             {
                 _updateTarget.TrySetResult(target.UtcDateTime);

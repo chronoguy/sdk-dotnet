@@ -126,19 +126,7 @@ namespace Temporal.Worker.Workflows
 
     // ----------- -----------
 
-    /// <summary>
-    /// Per-workflow settings related to the execution container of a workflow.
-    /// Must not affect the business logic.
-    /// These may optionally be set by both: by the client that stated a workflow OR by the workflow host (globally or for a specific workflow).
-    /// If set in several places, these settings will be merged before being applied to a specific workflow at the time of starting it.
-    /// Once started, they need to be read-only.
-    /// Example: Timeouts.
-    /// </summary>   
-    public class WorkflowExecutionConfiguration : IWorkflowExecutionConfiguration
-    {
-        public int WorkflowTaskTimeoutMillisec { get; set; }
-    }
-
+    
     /// <summary>
     /// Per-workflow settings related to the business logic and/or the execution container of a workflow.
     /// May affect the business logic.
@@ -209,32 +197,32 @@ namespace Temporal.Worker.Workflows
     }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
-    public class WorkflowSignalAttribute : Attribute
+    public class WorkflowSignalHandlerAttribute : Attribute
     {
         public string SignalTypeName { get; }
 
-        public WorkflowSignalAttribute()
+        public WorkflowSignalHandlerAttribute()
             : this(String.Empty)
         {
         }
 
-        public WorkflowSignalAttribute(string signalTypeName)
+        public WorkflowSignalHandlerAttribute(string signalTypeName)
         {
             SignalTypeName = signalTypeName;
         }
     }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
-    public class WorkflowQueryAttribute : Attribute
+    public class WorkflowQueryHandlerAttribute : Attribute
     {
         public string QueryTypeName { get; }
 
-        public WorkflowQueryAttribute()
+        public WorkflowQueryHandlerAttribute()
             : this(String.Empty)
         {
         }
 
-        public WorkflowQueryAttribute(string queryTypeName)
+        public WorkflowQueryHandlerAttribute(string queryTypeName)
         {
             QueryTypeName = queryTypeName;
         }

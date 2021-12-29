@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using Temporal.Common.DataModel;
+using Temporal.Common.WorkflowConfiguration;
 using Temporal.Worker.Activities;
 using Temporal.Worker.Workflows;
 using Temporal.Worker.Workflows.Base;

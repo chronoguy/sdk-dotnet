@@ -61,7 +61,7 @@ namespace Temporal.Sdk.BasicSamples
                 return workflowCtx.Orchestrator.Activities.ExecuteAsync(RemoteApiNames.Activities.SpeakGreeting, new SpeechRequest(greetingText));
             }
 
-            [WorkflowSignal]
+            [WorkflowSignalHandler]
             public void RequestExit()
             {
                 _requestExit.TrySetResult();

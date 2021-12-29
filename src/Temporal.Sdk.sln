@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReflectionAnalysisPoC", "In
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "InternalAlgorithms", "InternalAlgorithms", "{8DD18538-75F1-4B23-A084-CE5F19964057}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Temporal.Util", "Utilities\Temporal.Util.csproj", "{7FF3D386-CD67-4C3C-A62D-412C47C4F537}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Temporal.Util", "Utilities\Temporal.Util.csproj", "{7FF3D386-CD67-4C3C-A62D-412C47C4F537}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
