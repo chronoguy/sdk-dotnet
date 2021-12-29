@@ -1,63 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
-using Temporal.Async;
-using Temporal.Common.DataModel;
+
 using Temporal.WorkflowClient;
 
-using static Temporal.Sdk.BasicSamples.Part1_4_TimersAndComposition2;
+using static Temporal.Sdk.BasicSamples.Part1_5_AttributesAndInterfaces;
 
 namespace Temporal.Sdk.BasicSamples
 {
     public class Part2_2_IfaceBasedClient
     {        
-        // Entities:
-
-        public record MoneyAmount(int Dollars, int Cents) : IDataValue;
-        public record OrderConfirmation(DateTime TimestampUtc, Guid OrderId) : IDataValue;
-        public record Product(string Name, MoneyAmount Price) : IDataValue;
-        public record DeliveryInfo(string Address) : IDataValue;
-        public record User(string FirstName, string LastName, Guid UserId) : IDataValue
-        {
-            public string UserKey { get { return UserKey.ToString(); } }
-        }
-
-        // Workflow interfaces:
-
-        public interface IProductList
-        {
-            [WorkflowSignalStub]
-            Task AddProductAsync(Product product);
-
-            [WorkflowQueryStub]
-            Task<IReadOnlyCollection<Product>> GetProductsAsync();
-
-            [WorkflowQueryStub(QueryTypeName = "GetTotalWithoutTax")]
-            Task<MoneyAmount> GetTotalAsync();
-        }
-
-        public interface IShoppingCart : IProductList
-        {
-            [WorkflowQueryStub]
-            Task<TryGetResult<MoneyAmount>> TryGetTotalWithTaxAsync();
-
-            [WorkflowQueryStub]
-            Task<User> GetOwnerAsync();
-
-            [WorkflowSignalStub]
-            Task SetDeliveryInfoAsync(DeliveryInfo deliveryInfo);
-
-            [WorkflowSignalStub(SignalTypeName = "Pay")]
-            Task ApplyPaymentAsync(MoneyAmount amount);
-
-            [WorkflowRunMethodStub]
-            Task<OrderConfirmation> ShopAsync(User shopper);
-
-            [WorkflowRunMethodStub(CanBindToNewRun = false, CanBindToExistingRun = true)]
-            Task<OrderConfirmation> ContinueShoppingAsync();
-        }
-        
         public static async Task Minimal(string[] _)
         {
             TemporalServiceClientConfiguration serviceConfig = new();
@@ -192,8 +144,8 @@ namespace Temporal.Sdk.BasicSamples
             }
 
             Console.WriteLine("Cart is already active. Current items:");
-            IReadOnlyCollection<Product> products = await cart.GetProductsAsync();
-            foreach(Product p in products)
+            Products cartItems = await cart.GetProductsAsync();
+            foreach(Product p in cartItems.Collection)
             {
                 Console.WriteLine($"    {p.Name}: ${p.Price.Dollars}.{p.Price.Cents}");
             }
@@ -220,8 +172,8 @@ namespace Temporal.Sdk.BasicSamples
             await cart.ShopAsync(shopper);  // Start new run or connet to existing.
 
             Console.WriteLine("Current items:");
-            IReadOnlyCollection<Product> products = await cart.GetProductsAsync();
-            foreach (Product p in products)
+            Products cartItems = await cart.GetProductsAsync();
+            foreach (Product p in cartItems.Collection)
             {
                 Console.WriteLine($"    {p.Name}: ${p.Price.Dollars}.{p.Price.Cents}");
             }

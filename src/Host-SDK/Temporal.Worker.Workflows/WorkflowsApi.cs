@@ -179,7 +179,7 @@ namespace Temporal.Worker.Workflows
     // ----------- -----------
 
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface, Inherited = true, AllowMultiple = true)]
-    public class WorkflowAttribute : Attribute
+    public sealed class WorkflowAttribute : Attribute
     {
         public string RunMethod { get; }
 
@@ -197,35 +197,17 @@ namespace Temporal.Worker.Workflows
     }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
-    public class WorkflowSignalHandlerAttribute : Attribute
+    public sealed class WorkflowSignalHandlerAttribute : Attribute
     {
-        public string SignalTypeName { get; }
-
-        public WorkflowSignalHandlerAttribute()
-            : this(String.Empty)
-        {
-        }
-
-        public WorkflowSignalHandlerAttribute(string signalTypeName)
-        {
-            SignalTypeName = signalTypeName;
-        }
+        public string SignalTypeName { get; set; }
+        public WorkflowSignalHandlerAttribute() { }
     }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
-    public class WorkflowQueryHandlerAttribute : Attribute
+    public sealed class WorkflowQueryHandlerAttribute : Attribute
     {
-        public string QueryTypeName { get; }
-
-        public WorkflowQueryHandlerAttribute()
-            : this(String.Empty)
-        {
-        }
-
-        public WorkflowQueryHandlerAttribute(string queryTypeName)
-        {
-            QueryTypeName = queryTypeName;
-        }
+        public string QueryTypeName { get; set; }
+        public WorkflowQueryHandlerAttribute() { }
     }
 
     // ----------- -----------

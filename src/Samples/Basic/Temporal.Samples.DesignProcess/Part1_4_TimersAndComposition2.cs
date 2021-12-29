@@ -101,7 +101,7 @@ namespace Temporal.Sdk.BasicSamples
                 _requestAbort.TrySetResult();
             }
 
-            [WorkflowSignalHandler(signalTypeName: RemoteApiNames.CountdownTimerWorkflow.Signals.UpdateTargetTime)]
+            [WorkflowSignalHandler(SignalTypeName = RemoteApiNames.CountdownTimerWorkflow.Signals.UpdateTargetTime)]
             public void UpdateTarget(TargetTimePayload target)
             {
                 _updateTarget.TrySetResult(target.UtcDateTime);
