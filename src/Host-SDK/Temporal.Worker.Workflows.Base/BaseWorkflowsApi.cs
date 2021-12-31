@@ -12,7 +12,7 @@ namespace Temporal.Worker.Workflows.Base
     // =========== Basic workflow abstractions ===========
     // The most basic abstraction of a workflow that a user can see is IBasicWorkflow.
     // We do not guide there and it is rare that users will be exposed to this abstraction.
-    // However, if a user wants to customise how higher level code abstractions use to Temporal concepts,
+    // However, if a user wants to customize how higher level code abstractions use to Temporal concepts,
     // they will need to implement IBasicWorkflow or by subclassing BasicWorkflowBase.
 
     public interface IBasicWorkflow
