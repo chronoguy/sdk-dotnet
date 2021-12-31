@@ -1,9 +1,11 @@
 # Temporal .NET SDK <br /> Architecture and strategy
 
-**.NET SDK: Архитектура и стратегия***
+<br />
 
-<div style="text-align: right"><strong>*</strong><sub><sup>this doc needs to contain some non-ASCII
-chars so that the tools know to use UTF-8 without the signature</sup></sub></div>
+<div style="text-align: left; font-style: italic; padding-left: 25px;">
+Document status:<br />
+Work-in-progress; Review/feedback is required and requested.
+</div>
 
 <br />
 
@@ -158,6 +160,10 @@ The same restriction exists on all other data passed to and from a workflow: sig
 
 However, to support advanced scenarios (e.g. polyglot scenarios) it is possible to directly access the payload passed to the workflow. Users can use custom serializers to parse a payload that contains an object that does not implement `IDataValue`. The payload is also made available to interface-based workflow implementations ([example](../src/Samples/Basic/Temporal.Samples.DesignProcess/Part4_1_BasicWorkflowUsage.cs) | [another example](../src/Samples/Basic/Temporal.Samples.DesignProcess/Part4_2_BasicWorkflowUsage_MultipleWorkers.cs) | [dynamic workflow example](../src/Samples/Basic/Temporal.Samples.DesignProcess/Part3_1_DynamicWorkflow.cs))
 
+### Workflow attributes
+
+Detailed information on attributes that are used to mark-up workflow implementations is found [here](../src/Host-SDK/Temporal.Worker.Workflows/WorkflowsApi.cs#L181-L226), [here](../src/Host-SDK/Temporal.Worker.Workflows/WorkflowsApi.cs#L246-L271) and [here](../src/Host-SDK/Temporal.Worker.Workflows/WorkflowsApi.cs#L280-L300).
+
 ### Examples
 
 @ToDo: add some clarification to some of these examples.
@@ -202,8 +208,25 @@ Here is an [example](../src/Samples/Basic/Temporal.Samples.DesignProcess/Part4_1
 
 ## High level architecture: Client SDK
 
-. . .
+The Client SDK is a separately distributed package that allows .NET apps to act as clients to any Temporal workflow, written in any language.
 
-. . .
+The Client SDK does not use Core.
 
-. . .
+**Name-based APIs:**
+Polyglot scenarios are critical for the success of Temporal's .NET ecosystem. Thus, the SDK provides a first class experience for invoking workflows that do not adhere to .NET specific requirements. [This file](../src/Samples/Basic/Temporal.Samples.DesignProcess/Part2_1_ClientStartsAndUsesWorkflow.cs) offers several step-by-step examples.
+
+**Interface-based dynamic stub APIs:**
+The client SDK supports interface-based dynamic stub generation. This allows to instantiate strongly-typed stud representing a workflow orchestrated by temporal. We recommend using this approach only when both, the client app and the workflow are implemented in .NET. Here are [examples on how to use interface-based dynamic stub generation on the client side](../src/Samples/Basic/Temporal.Samples.DesignProcess/Part2_2_IfaceBasedClient.cs). And here is the corresponding [workflow implementation](../src/Samples/Basic/Temporal.Samples.DesignProcess/Part1_5_AttributesAndInterfaces.cs).
+
+Additional detailed information on client-side attributes that drive interface-based dynamic stub generation is available in [this file](../src/Common/Temporal.WorkflowClient/WorkflowStubAttributes.cs), in particular [here](../src/Common/Temporal.WorkflowClient/WorkflowStubAttributes.cs#L9-L56).
+
+
+@ToDo: More details
+
+
+<hr />
+
+**.NET SDK: Архитектура и стратегия***
+
+<div style="text-align: right"><strong>*</strong><sub><sup>this doc needs to contain some non-ASCII
+chars so that the tools know to use UTF-8 without the signature</sup></sub></div>
