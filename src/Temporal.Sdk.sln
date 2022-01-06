@@ -17,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "InternalAlgorithms", "Inter
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Temporal.Util", "Utilities\Temporal.Util.csproj", "{7FF3D386-CD67-4C3C-A62D-412C47C4F537}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ControlTaskContinuationOrder", "InternalAlgorithms\ControlTaskContinuationOrder\ControlTaskContinuationOrder.csproj", "{C9EF371F-BFA2-4B3E-8377-77B4673AC8F5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,12 +49,17 @@ Global
 		{7FF3D386-CD67-4C3C-A62D-412C47C4F537}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7FF3D386-CD67-4C3C-A62D-412C47C4F537}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7FF3D386-CD67-4C3C-A62D-412C47C4F537}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9EF371F-BFA2-4B3E-8377-77B4673AC8F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9EF371F-BFA2-4B3E-8377-77B4673AC8F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9EF371F-BFA2-4B3E-8377-77B4673AC8F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9EF371F-BFA2-4B3E-8377-77B4673AC8F5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{422C4007-0693-40CA-91DB-6CBBB7FD746C} = {8DD18538-75F1-4B23-A084-CE5F19964057}
+		{C9EF371F-BFA2-4B3E-8377-77B4673AC8F5} = {8DD18538-75F1-4B23-A084-CE5F19964057}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {55779F94-BE5C-4A79-9C28-202FFEAAAEF5}
