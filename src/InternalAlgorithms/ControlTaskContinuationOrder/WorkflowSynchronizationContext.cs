@@ -182,7 +182,6 @@ namespace ControlTaskContinuationOrder
         /// be frozen. Therefore, it's important to avoid synchronization. Thus, we do not lock on <c>_workActions</c>
         /// and instead catch and gracefully give up in case of concurrent access errors.
         /// </summary>
-        /// <returns></returns>
         internal IReadOnlyCollection<Task> GetAllPostedTasks()
         {
             List<Task> postedTasks = new(capacity: _workActions.Count);
