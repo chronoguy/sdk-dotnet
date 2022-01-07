@@ -68,7 +68,7 @@ namespace ControlTaskContinuationOrder
             WriteLine($"wfMain Sync Ctx: {wfMain.ToSynchronizationContextString()}");
             WriteLine($"Execute: 3");
 
-            //SignalHandler("");
+            wfMain.InvokeAllPostedWorkActions();
 
             WriteLine($"Execute: 4");
 
@@ -79,7 +79,7 @@ namespace ControlTaskContinuationOrder
 
             while (!activityCompleter.IsCompleted)
             {
-                activityCompleter.InvokeAllPostedAsyncItems();
+                activityCompleter.InvokeAllPostedWorkActions();
             }
 
             WriteLine($"Execute: 6");
@@ -89,7 +89,7 @@ namespace ControlTaskContinuationOrder
 
             WriteLine($"Execute: 7");
 
-            wfMain.InvokeAllPostedAsyncItems();
+            //wfMain.InvokeAllPostedAsyncItems();
 
             WriteLine($"Execute: 8");
 
@@ -97,7 +97,7 @@ namespace ControlTaskContinuationOrder
             {
                 WriteLine($"Execute: 9.1");
 
-                signalHandler.InvokeAllPostedAsyncItems();
+                signalHandler.InvokeAllPostedWorkActions();
 
                 WriteLine($"Execute: 9.2");
             }
@@ -106,7 +106,7 @@ namespace ControlTaskContinuationOrder
             {
                 WriteLine($"Execute: 10.1");
 
-                wfMain.InvokeAllPostedAsyncItems();
+                wfMain.InvokeAllPostedWorkActions();
 
                 WriteLine($"Execute: 10.2");
             }
@@ -117,7 +117,24 @@ namespace ControlTaskContinuationOrder
             WriteLine($"Execute: End");
         }
 
+        private static bool TryGetTaskFactory<TResult>(out TaskFactory<TResult> taskFactory)
+        {
+            taskFactory = null;
 
+            SynchronizationContext currSyncCtx = SynchronizationContext.Current;
+            if (currSyncCtx == null)
+            {
+                return false;
+            }
+
+            if (! (currSyncCtx is WorkflowSynchronizationContext wfSyncCtx))
+            {
+                return false;
+            }
+
+            taskFactory = wfSyncCtx.CreateNewTaskFactory<TResult>(CancellationToken.None);
+            return true;
+        }
 
         private async Task<bool> WorkflowMainAsync()
         {
@@ -144,9 +161,40 @@ namespace ControlTaskContinuationOrder
                     + $" activityTask.Status={activityTask.Status};"
                     + $" _signalReceivedCompletion.Task.Status={_signalReceivedCompletion.Task.Status}");
 
+            WriteLine($"WorkflowMainAsync: 5");
+
+            Task<string> scheduledTask;
+            if (TryGetTaskFactory(out TaskFactory<Task<string>> taskFactory))
+            {
+                WriteLine($"WorkflowMainAsync: 5.1");
+
+                scheduledTask = taskFactory.StartNew( async () =>
+                    {
+                        Program.WriteLine($"WorkflowMainAsync-scheduledTask: 1");
+                        await Task.Delay(1000);
+                        Program.WriteLine($"WorkflowMainAsync-scheduledTask: End");
+                        return "scheduledTask Completed";
+                    }).Unwrap();
+
+                WriteLine($"WorkflowMainAsync: 5.2");
+            }
+            else
+            {
+                WriteLine($"WorkflowMainAsync: 5.3");
+                scheduledTask = Task.FromResult("WorkflowMainAsync-scheduledTask: Could not obtain TaskFactory.");
+                WriteLine($"WorkflowMainAsync: 5.4");
+            }
+
+            WriteLine($"WorkflowMainAsync: 6");
+
+            string scheduledTaskResult = await scheduledTask;
+
+            WriteLine($"WorkflowMainAsync: 7");
+            WriteLine($"WorkflowMainAsync: scheduledTaskResult=\"{scheduledTaskResult}\"");
+
             string[] value2 = await Task.WhenAll(activityTask, _signalReceivedCompletion.Task);
 
-            WriteLine($"WorkflowMainAsync: 5");
+            WriteLine($"WorkflowMainAsync: 8");
             WriteLine($"WorkflowMainAsync: value2=\"{value2}\".");
 
             WriteLine($"WorkflowMainAsync:"

@@ -8,73 +8,9 @@ namespace ControlTaskContinuationOrder
 {
     public sealed class WorkflowSynchronizationContext : SynchronizationContext
     {
-        public static TResult ExecuteInContext<TArg, TResult>(Func<TArg, TResult> action, TArg state, SynchronizationContext targetSyncCtx)
-        {
-            Program.WriteLine($"--ExecuteInContext(..): 1");
-
-            if (action == null)
-            {
-                return default(TResult);
-            }
-            
-            if (targetSyncCtx == null)
-            {
-                return action(state);
-            }
-
-            SynchronizationContext prevSyncCtx = SynchronizationContext.Current;
-            bool installSyncCtx = (prevSyncCtx != targetSyncCtx);
-
-            Program.WriteLine($"--ExecuteInContext(..): 2; installSyncCtx={installSyncCtx}.");
-
-            if (installSyncCtx)
-            {
-                SynchronizationContext.SetSynchronizationContext(targetSyncCtx);
-            }
-
-            TResult result;
-            try
-            {                
-                Program.WriteLine($"--ExecuteInContext(..): 3 (start callback)");
-                result = action(state);
-                Program.WriteLine($"--ExecuteInContext(..): 4 (end callback)");
-            }
-            finally
-            {
-                if (installSyncCtx)
-                {
-                    SynchronizationContext.SetSynchronizationContext(prevSyncCtx);
-                }
-            }
-
-            Program.WriteLine($"--ExecuteInContext(..): End");
-            return result;
-        }
+        #region Static Id management
 
         private static int s_lastId = 0;
-        
-        private readonly Queue<UserCallback> _actions = new Queue<UserCallback>();
-
-        public WorkflowSynchronizationContext()
-        {
-            Id = GetNextId();
-            OriginalId = Id;
-        }
-
-        private WorkflowSynchronizationContext(int originalId)
-        {
-            Id = GetNextId();
-            OriginalId = originalId;
-        }
-
-        public int Id { get; }
-
-        public int OriginalId { get; }
-
-        public override string ToString()
-        {
-            return $"{nameof(WorkflowSynchronizationContext)}(Id={Id}, OriginalId={OriginalId})";
-        }
 
         private static int GetNextId()
         {
@@ -88,21 +24,102 @@ namespace ControlTaskContinuationOrder
             return id;
         }
 
+        #endregion Static Id management
+
+        public const TaskCreationOptions DefaultTaskCreationOptions = TaskCreationOptions.PreferFairness
+                                                                    | TaskCreationOptions.DenyChildAttach
+                                                                    | TaskCreationOptions.RunContinuationsAsynchronously;
+
+        public const TaskContinuationOptions DefaultTaskContinuationOptions = TaskContinuationOptions.PreferFairness
+                                                                            | TaskContinuationOptions.DenyChildAttach
+                                                                            | TaskContinuationOptions.LazyCancellation;
+
+        private readonly Queue<UserWorkAction> _workActions = new Queue<UserWorkAction>();
+        private readonly WaitCallback _executeWorkActionDelegate;
+        private readonly WorkflowSynchronizationContextTaskScheduler _taskScheduler;
+
+        public WorkflowSynchronizationContext()                        
+            : this(originalId: null)
+        {            
+        }
+
+        private WorkflowSynchronizationContext(int? originalId)
+        {
+            Id = GetNextId();
+            OriginalId = originalId ?? Id;
+            _executeWorkActionDelegate = ExecuteWorkAction;
+            _taskScheduler = new WorkflowSynchronizationContextTaskScheduler(this);
+        }
+
+        public int Id { get; }
+
+        public int OriginalId { get; }
+
+        public TaskScheduler TaskScheduler
+        {
+            get { return _taskScheduler; }
+        }
+
+        public override string ToString()
+        {
+            return $"{nameof(WorkflowSynchronizationContext)}(Id={Id}, OriginalId={OriginalId})";
+        }
+
+        public TaskFactory CreateNewTaskFactory(CancellationToken cancelToken)
+        {
+            return new TaskFactory(cancelToken, DefaultTaskCreationOptions, DefaultTaskContinuationOptions, TaskScheduler);
+        }
+
+        public TaskFactory<TResult> CreateNewTaskFactory<TResult>(CancellationToken cancelToken)
+        {
+            return new TaskFactory<TResult>(cancelToken, DefaultTaskCreationOptions, DefaultTaskContinuationOptions, TaskScheduler);
+        }
+
         public override SynchronizationContext CreateCopy()
         {
-            return new WorkflowSynchronizationContext();
+            return new WorkflowSynchronizationContext(OriginalId);
         }
-       
-        public void InvokeAllPosted()
+
+        /// <summary>Dispatches a synchronous message. NOT Supported - will throw <c>NotSupportedException</c>!</summary>        
+        public override void Send(SendOrPostCallback workAction, object state)
         {
-            ThreadPoolInvocationState invocationState = new(this);
+            throw new NotSupportedException($"{nameof(WorkflowSynchronizationContext)}.{nameof(Send)}(..) is not supported.");
+        }
+
+        /// <summary>Dispatches an asynchronous message.</summary>   
+        public override void Post(SendOrPostCallback workAction, object state)
+        {
+            Post(workAction, state, representedTask: null);
+        }
+
+        /// <summary>Dispatches an asynchronous message.</summary>
+        public void Post(SendOrPostCallback workAction, object state, Task representedTask)
+        {
+            Program.WriteLine($"**{this.ToString()}.POST(.., representedTask={(representedTask?.Id.ToString() ?? "null")}): 1");
+
+            if (workAction == null)
+            {
+                return;
+            }
+
+            UserWorkAction callback = new UserWorkAction(workAction.Invoke, state, representedTask);
+            EqueueWorkAction(callback);
+
+            Program.WriteLine($"**{this.ToString()}.POST(.., representedTask={(representedTask?.Id.ToString() ?? "null")}): End");
+        }
+
+        public void InvokeAllPostedWorkActions()
+        {
+            Program.WriteLine($"**{this.ToString()}.InvokeAllPostedWorkActions(): 1  (wrkActsCnt={_workActions.Count})");
+
+            using ThreadPoolInvocationState invocationState = new();
             object errorInfo = null;
 
-            while(_actions.TryDequeue(out UserCallback callbackItem))
+            while(TryDequeueWorkAction(out UserWorkAction workAction))
             {
-                invocationState.Reset();
+                invocationState.Reset(workAction);
 
-                ThreadPool.QueueUserWorkItem(callbackItem.InvokeDelegate, invocationState);
+                ThreadPool.QueueUserWorkItem(_executeWorkActionDelegate, invocationState);
 
                 invocationState.WaitForCompletion();
                 if (invocationState.TryGetException(out Exception ex))
@@ -135,102 +152,124 @@ namespace ControlTaskContinuationOrder
                     throw new AggregateException((List<Exception>) errorInfo);
                 }
             }
+
+            Program.WriteLine($"**{this.ToString()}.InvokeAllPostedWorkActions(): End");
         }
 
-        private bool TryDequeueAction(out UserCallback callbackItem)
+        private bool TryDequeueWorkAction(out UserWorkAction workAction)
         {
-            lock (_actions)
+            lock (_workActions)
             {
-                return _actions.TryDequeue(out callbackItem);                
+                return _workActions.TryDequeue(out workAction);                
             }
         }
 
-        private void EqueueAction(UserCallback callbackItem)
+        private void EqueueWorkAction(UserWorkAction workAction)
         {
-            lock (_actions)
+            lock (_workActions)
             {
-                _actions.Enqueue(callbackItem);
+                _workActions.Enqueue(workAction);
             }
         }
 
-        // Dispatches an asynchronous message.
-        public override void Post(SendOrPostCallback callbackDelegate, object state)
+        /// <summary>
+        /// This method backs <see cref="WorkflowSynchronizationContextTaskScheduler.GetScheduledTasks" />.
+        /// As described for any override of <see cref="TaskScheduler.GetScheduledTasks" /> this API is
+        /// intended for integration with debuggers. It will only be invoked when a debugger requests the data.
+        /// The returned tasks will be used by debugging tools to access the currently queued tasks, in order to
+        /// provide a representation of this information in the UI.
+        /// It is important to note that, when this method is called, all other threads in the process will
+        /// be frozen. Therefore, it's important to avoid synchronization. Thus, we do not lock on <c>_workActions</c>
+        /// and instead catch and gracefully give up in case of concurrent access errors.
+        /// </summary>
+        /// <returns></returns>
+        internal IReadOnlyCollection<Task> GetAllPostedTasks()
         {
-            Program.WriteLine($"**{this.ToString()}.POST(..): 1");
+            List<Task> postedTasks = new(capacity: _workActions.Count);
 
-            if (callbackDelegate == null)
+            try
             {
-                return;
-            }
-
-            UserCallback callback = new UserCallback(callbackDelegate.Invoke, state);
-            EqueueAction(callback);
-
-            Program.WriteLine($"**{this.ToString()}.POST(..): End");
-        }
-
-        // Dispatches a synchronous message.
-        public override void Send(SendOrPostCallback workItem, object state)
-        {
-            throw new NotSupportedException($"{nameof(WorkflowSynchronizationContext)}.{nameof(Send)}(..) is not supported.");
-        }
-
-        private record UserCallback(Action<object> CallbackDelegate, object State)
-        {
-            private WaitCallback _invokeDelegate = null;
-            private Func<object, object> _callbackDelegateAsFunc = null;
-
-            public WaitCallback InvokeDelegate
-            {
-                get
+                foreach (UserWorkAction workAction in _workActions)
                 {
-                    if (_invokeDelegate == null)
+                    if (workAction.TryGetRepresentedTask(out Task workActionTask))
                     {
-                        _invokeDelegate = InvokeManaged;
+                        postedTasks.Add(workActionTask);
                     }
+                }
+            }
+            catch
+            {
+                // If we could not access all workActionTask, just return what we have.
+            }
 
-                    return _invokeDelegate;
+            return postedTasks;
+        }
+
+        private void ExecuteWorkAction(object invocationStateObject)
+        {
+            if (invocationStateObject == null)
+            {
+                throw new ArgumentNullException(nameof(invocationStateObject));
+            }
+
+            if (! (invocationStateObject is ThreadPoolInvocationState invocationState))
+            {
+                throw new ArgumentException($"The specified {nameof(invocationStateObject)} was expected to be of type"
+                                          + $" {nameof(ThreadPoolInvocationState)}, but the actual type"
+                                          + $" was {invocationStateObject.GetType().Name}.");
+            }
+
+            try
+            {
+                ExecuteWorkActionInContext(invocationState.WorkAction);
+                invocationState.TrySetStatusSucceeded();
+            }
+            catch (Exception ex)
+            {
+                invocationState.TrySetStatusFailed(ex);
+            }
+        }
+
+        private void ExecuteWorkActionInContext(UserWorkAction workAction)
+        {
+            Program.WriteLine($"**{this.ToString()}.ExecuteWorkActionInContext(workAction.TaskId={workAction.RepresentedTask?.Id}): 1");
+
+            SynchronizationContext prevSyncCtx = SynchronizationContext.Current;
+
+            bool installSyncCtx = (prevSyncCtx != this);
+            if (installSyncCtx)
+            {
+                SynchronizationContext.SetSynchronizationContext(this);
+            }
+
+            try
+            {
+                workAction.Invoke();
+            }
+            finally
+            {
+                if (installSyncCtx)
+                {
+                    SynchronizationContext.SetSynchronizationContext(prevSyncCtx);
                 }
             }
 
-            public void InvokeDirectly()
+            Program.WriteLine($"**{this.ToString()}.ExecuteWorkActionInContext(workAction.TaskId={workAction.RepresentedTask?.Id}): End");
+        }
+
+        #region Inner types
+
+        private record UserWorkAction(Action<object> Action, object State, Task RepresentedTask)
+        {
+            public void Invoke()
             {
-                CallbackDelegate(State);
+                Action(State);
             }
 
-            private object CallbackDelegateAsFuncWrapper(object state)
+            public bool TryGetRepresentedTask(out Task representedTask)
             {
-                CallbackDelegate(state);
-                return null;
-            }
-
-            public void InvokeManaged(object invocationStateObject)
-            {
-                if (invocationStateObject == null)
-                {
-                    throw new ArgumentNullException(nameof(invocationStateObject));
-                }
-
-                if (! (invocationStateObject is ThreadPoolInvocationState invocationState))
-                {
-                    throw new ArgumentException($"The specified {nameof(invocationStateObject)} was expected to be of type"
-                                              + $" {nameof(ThreadPoolInvocationState)}, but the actual type was {invocationStateObject.GetType().Name}.");
-                }
-
-                try
-                {                    
-                    if (_callbackDelegateAsFunc == null)
-                    {
-                        _callbackDelegateAsFunc = CallbackDelegateAsFuncWrapper;
-                    }
-
-                    ExecuteInContext(_callbackDelegateAsFunc, State, invocationState.TargetSyncCtx);
-                    invocationState.TrySetStatusSucceeded();
-                }
-                catch (Exception ex)
-                {
-                    invocationState.TrySetStatusFailed(ex);
-                }
+                representedTask = RepresentedTask;
+                return (representedTask != null);
             }
         }
 
@@ -243,20 +282,30 @@ namespace ControlTaskContinuationOrder
                 public const int Failed = 3;
             }
 
+            private UserWorkAction _workAction = null;
             private Exception _exception = null;
             private int _status = ExecutionStatus.NotStarted;
             private ManualResetEventSlim _completionSignal = new(initialState: false);
 
-            public ThreadPoolInvocationState(SynchronizationContext targetSyncCtx)
+            public UserWorkAction WorkAction
             {
-                TargetSyncCtx = targetSyncCtx;
+                get { return _workAction; }
             }
-
-            public SynchronizationContext TargetSyncCtx { get; }
 
             public int Status
             {
                 get { return _status; }
+            }
+
+            private ManualResetEventSlim GetCompletionSignal()
+            {
+                ManualResetEventSlim completionSignal = _completionSignal;
+                if (completionSignal == null)
+                {
+                    throw new ObjectDisposedException($"This {nameof(ThreadPoolInvocationState)} instance is already disposed.");
+                }
+
+                return completionSignal;
             }
 
             public bool TrySetStatusSucceeded()
@@ -266,7 +315,7 @@ namespace ControlTaskContinuationOrder
                     return false;
                 }
 
-                _completionSignal.Set();
+                GetCompletionSignal().Set();
                 return true;                
             }
 
@@ -278,13 +327,13 @@ namespace ControlTaskContinuationOrder
                 }
                 
                 _exception = exception;
-                _completionSignal.Set();
+                GetCompletionSignal().Set();
                 return true;                
             }
 
             public void WaitForCompletion()
             {
-                _completionSignal.Wait();
+                GetCompletionSignal().Wait();
             }
 
             public bool TryGetException(out Exception exception)
@@ -293,19 +342,32 @@ namespace ControlTaskContinuationOrder
                 return (exception != null);
             }
 
-            public void Reset()
+            public void Reset(UserWorkAction workAction)
             {
-                _exception = null;
-                _status = ExecutionStatus.NotStarted;
-                _completionSignal.Reset();
+                if (workAction == null)
+                {
+                    throw new ArgumentNullException(nameof(workAction));
+                }
+
+                ResetCore(workAction);
             }
 
             public void Dispose()
             {
-                Reset();
+                ResetCore(workAction: null);
                 ManualResetEventSlim completionSignal = Interlocked.Exchange(ref _completionSignal, null);
-                completionSignal.Dispose();
+                completionSignal?.Dispose();
+            }
+
+            private void ResetCore(UserWorkAction workAction)
+            {
+                _workAction = workAction;
+                _exception = null;
+                _status = ExecutionStatus.NotStarted;
+                GetCompletionSignal().Reset();
             }
         }
+        
+        #endregion Inner types
     }
 }
