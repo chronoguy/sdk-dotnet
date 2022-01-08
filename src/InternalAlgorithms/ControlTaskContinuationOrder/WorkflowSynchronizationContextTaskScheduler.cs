@@ -24,7 +24,7 @@ namespace ControlTaskContinuationOrder
         private readonly Queue<Task> _scheduledTasks = new Queue<Task>();
         private readonly object _executeScheduledTasksLoopLock = new object();
 
-        private TaskCompletionSource _tasksScheduledCompletion = null;
+        private TaskCompletionSource<bool> _tasksScheduledCompletion = null;
 
         public WorkflowSynchronizationContextTaskScheduler(WorkflowSynchronizationContext syncCtx)
             : base()
@@ -125,10 +125,10 @@ namespace ControlTaskContinuationOrder
         {
             lock(_scheduledTasks)
             {
-                _tasksScheduledCompletion = _tasksScheduledCompletion ?? new TaskCompletionSource();
+                _tasksScheduledCompletion = _tasksScheduledCompletion ?? new TaskCompletionSource<bool>();
                 if (_scheduledTasks.Count > 0)
                 {
-                    _tasksScheduledCompletion.TrySetResult();
+                    _tasksScheduledCompletion.TrySetResult(true);
                 }
                        
                 return _tasksScheduledCompletion.Task;                
@@ -208,7 +208,14 @@ namespace ControlTaskContinuationOrder
         {
             lock (_scheduledTasks)
             {
-                return _scheduledTasks.TryPeek(out task);
+                if (_scheduledTasks.Count > 0)
+                {
+                    task = _scheduledTasks.Peek();
+                    return true;
+                }
+
+                task = null;
+                return false;
             }
         }
 
@@ -216,8 +223,10 @@ namespace ControlTaskContinuationOrder
         {
             lock (_scheduledTasks)
             {
-                if (_scheduledTasks.TryDequeue(out task))
-                {
+                if (_scheduledTasks.Count > 0)
+                { 
+                    task = _scheduledTasks.Dequeue();
+
                     if (_scheduledTasks.Count == 0)
                     {
                         Debug.Assert(_tasksScheduledCompletion == null || _tasksScheduledCompletion.Task.IsCompleted,
@@ -228,6 +237,7 @@ namespace ControlTaskContinuationOrder
                     return true;
                 }
 
+                task = null;
                 return false;
             }
         }
@@ -237,7 +247,7 @@ namespace ControlTaskContinuationOrder
             lock (_scheduledTasks)
             {
                 _scheduledTasks.Enqueue(task);
-                _tasksScheduledCompletion?.TrySetResult();
+                _tasksScheduledCompletion?.TrySetResult(true);
             }
         }
 

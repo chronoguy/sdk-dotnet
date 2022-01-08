@@ -370,12 +370,12 @@ namespace ControlTaskContinuationOrder
                 return TaskType.FromCanceled(cancelToken);
             }
 
-            TaskCompletionSource overallCompletion = new();
+            TaskCompletionSource<bool> overallCompletion = new();
             TaskType.Run( () => ExecuteMessageLoopUntilFinishedAsync(overallCompletion, cancelToken) );
             return overallCompletion.Task;
         }
 
-        private async Task ExecuteMessageLoopUntilFinishedAsync(TaskCompletionSource overallCompletion, CancellationToken cancelToken)
+        private async Task ExecuteMessageLoopUntilFinishedAsync(TaskCompletionSource<bool> overallCompletion, CancellationToken cancelToken)
         {
             Program.WriteLine($"--{nameof(WorkflowRoutine)}.ExecuteMessageLoopUntilFinishedAsync: 1");
 
@@ -478,7 +478,7 @@ namespace ControlTaskContinuationOrder
         /// - Ensure that <c>_wrRoutineSyncCtx</c> points to the instance that <c>_routineSyncCtx</c> previously pointed to.
         /// - Return a reference to <c>_wrRoutineSyncCtx</c>.
         /// </summary>        
-        private WeakReference<WorkflowSynchronizationContext> ClearPrivateInstanceHardRefs(TaskCompletionSource overallCompletion)
+        private WeakReference<WorkflowSynchronizationContext> ClearPrivateInstanceHardRefs(TaskCompletionSource<bool> overallCompletion)
         {
             Program.WriteLine($"--{nameof(WorkflowRoutine)}.ClearPrivateInstanceHardRefs: 1  (routineTaskId={_routineTask.Id}, routineSyncCtx={_routineSyncCtx?.ToString() ?? "null"})");
 
@@ -509,7 +509,7 @@ namespace ControlTaskContinuationOrder
             {
                 // Cannot get routineSyncCtx means a concurrent call to this method has already done everything.
                 Program.WriteLine($"--{nameof(WorkflowRoutine)}.ClearPrivateInstanceHardRefs: End B  (routineTaskId={_routineTask.Id}, routineSyncCtx={_routineSyncCtx?.ToString() ?? "null"})");
-                overallCompletion.TrySetResult();
+                overallCompletion.TrySetResult(true);
                 return null;
             }            
 
@@ -543,7 +543,7 @@ namespace ControlTaskContinuationOrder
             return false;
         }
 
-        private static async Task RunTillSyncContextCollectedAsync(TaskCompletionSource overallCompletion,
+        private static async Task RunTillSyncContextCollectedAsync(TaskCompletionSource<bool> overallCompletion,
                                                                    WeakReference<WorkflowSynchronizationContext> wrRoutineSyncCtx,
                                                                    CancellationToken cancelToken)
         {
@@ -565,7 +565,7 @@ namespace ControlTaskContinuationOrder
                 {
                     // If we lost the weak ref, then we are done.
                     Program.WriteLine($"--{nameof(WorkflowRoutine)}.RunTillSyncContextCollectedAsync: End");
-                    overallCompletion.TrySetResult();
+                    overallCompletion.TrySetResult(true);
                     return;
                 }
 
