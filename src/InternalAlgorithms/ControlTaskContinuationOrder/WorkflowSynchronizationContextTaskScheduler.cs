@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,13 +18,13 @@ namespace ControlTaskContinuationOrder
     internal class WorkflowSynchronizationContextTaskScheduler : TaskScheduler
     {
         public const bool PermitInlineExecution = false;
-
-        // SynchronizationContext associated with this scheduler:
+        
         private readonly WorkflowSynchronizationContext _syncCtx;
-
-        private readonly SendOrPostCallback _tryExecuteTaskWrapper;
-
+        private readonly WaitCallback _executeTaskDelegate;
         private readonly Queue<Task> _scheduledTasks = new Queue<Task>();
+        private readonly object _executeScheduledTasksLoopLock = new object();
+
+        private TaskCompletionSource _tasksScheduledCompletion = null;
 
         public WorkflowSynchronizationContextTaskScheduler(WorkflowSynchronizationContext syncCtx)
             : base()
@@ -33,7 +35,7 @@ namespace ControlTaskContinuationOrder
             }
 
             _syncCtx = syncCtx;
-            _tryExecuteTaskWrapper = (taskObject) => TryExecuteTask((Task) taskObject);
+            _executeTaskDelegate = ExecuteTask;
         }
 
         /// <summary>
@@ -43,6 +45,11 @@ namespace ControlTaskContinuationOrder
         public override int MaximumConcurrencyLevel
         {
             get { return 1; }
+        }
+
+        public int ScheduledTasksCount
+        {
+            get { lock (_scheduledTasks) { return _scheduledTasks.Count; } }
         }
 
         public override string ToString()
@@ -60,7 +67,7 @@ namespace ControlTaskContinuationOrder
 
             if (task != null)
             {
-                EqueueTask(task);
+                EqueueScheduledTask(task);
             }
 
             Program.WriteLine($"**{this.ToString()}.QueueTask(task.Id={task?.Id}): End");
@@ -73,7 +80,7 @@ namespace ControlTaskContinuationOrder
         /// </summary>        
         protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)
         {
-            Program.WriteLine($"**{this.ToString()}.TryExecuteTaskInline(task.Id={task?.Id}, previouslyQueued={taskWasPreviouslyQueued}).");
+            Program.WriteLine($"**!!!{this.ToString()}.TryExecuteTaskInline(task.Id={task?.Id}, previouslyQueued={taskWasPreviouslyQueued}).");
 
             if (PermitInlineExecution && !taskWasPreviouslyQueued && (SynchronizationContext.Current == _syncCtx))
             {
@@ -114,35 +121,69 @@ namespace ControlTaskContinuationOrder
             return scheduledTasks;
         }
 
-        public void ExecuteAllScheduledTasks()
+        public Task WhenTasksScheduledAsync()
         {
-            Program.WriteLine($"**{this.ToString()}.ExecuteAllScheduledTasks(): 1  (scheduledCount={_scheduledTasks.Count})");
+            lock(_scheduledTasks)
+            {
+                _tasksScheduledCompletion = _tasksScheduledCompletion ?? new TaskCompletionSource();
+                if (_scheduledTasks.Count > 0)
+                {
+                    _tasksScheduledCompletion.TrySetResult();
+                }
+                       
+                return _tasksScheduledCompletion.Task;                
+            }
+        }
+
+        public void ExecuteScheduledTasks(bool breakOnYield)
+        {
+            Program.WriteLine($"**{this.ToString()}.ExecuteScheduledTasks(breakOnYield={breakOnYield}): 1  (scheduledCount={_scheduledTasks.Count})");
 
             using ThreadPoolInvocationState invocationState = new();
             object errorInfo = null;
 
-            while (TryDequeueWorkAction(out UserWorkAction workAction))
+            // Generally, this method could be invoked concurrently from different threads, but that may break the
+            // strict ordering guarantee this scheduler provides. By synchronizing on the loop we avoid that.
+            lock (_executeScheduledTasksLoopLock)
             {
-                invocationState.Reset(workAction);
-
-                ThreadPool.QueueUserWorkItem(_executeWorkActionDelegate, invocationState);
-
-                invocationState.WaitForCompletion();
-                if (invocationState.TryGetException(out Exception ex))
+                while (TryDequeueScheduledTask(out Task scheduledTask))
                 {
-                    if (errorInfo == null)
+                    Program.WriteLine($"**{this.ToString()}.ExecuteScheduledTasks(breakOnYield={breakOnYield}): 2  (scheduledCount={_scheduledTasks.Count}, taskId={scheduledTask.Id})");
+
+                    invocationState.Reset(scheduledTask);
+
+                    ThreadPool.QueueUserWorkItem(_executeTaskDelegate, invocationState);
+
+                    invocationState.WaitForCompletion();
+                    if (invocationState.TryGetException(out Exception ex))
                     {
-                        errorInfo = ex;
+                        Program.WriteLine($"**{this.ToString()}.ExecuteScheduledTasks(): 3  (ex='{ex.GetType()}: {ex.Message}', taskId={scheduledTask.Id})");
+
+                        if (errorInfo == null)
+                        {
+                            errorInfo = ex;
+                        }
+                        else if (errorInfo is List<Exception> errorList)
+                        {
+                            errorList.Add(ex);
+                        }
+                        else
+                        {
+                            errorList = new List<Exception>();
+                            errorList.Add((Exception) errorInfo);
+                            errorList.Add(ex);
+                        }
                     }
-                    else if (errorInfo is List<Exception> errorList)
+
+                    Program.WriteLine($"**{this.ToString()}.ExecuteScheduledTasks(): 4  (scheduledCount={_scheduledTasks.Count}, taskId={scheduledTask.Id})"
+                                     + "\n *********** *********** *********** *********** *********** *********** ***********\n");
+
+                    if (breakOnYield
+                            && TryPeekScheduledTask(out Task lookaheadTask)
+                            && IsWorkActionInfoSet(lookaheadTask, WorkflowSynchronizationContext.WorkAction.Metadata.IsYieldContinuation))
                     {
-                        errorList.Add(ex);
-                    }
-                    else
-                    {
-                        errorList = new List<Exception>();
-                        errorList.Add((Exception) errorInfo);
-                        errorList.Add(ex);
+                        Program.WriteLine($"**{this.ToString()}.ExecuteScheduledTasks(): 5 (breakOnYield) (scheduledCount={_scheduledTasks.Count}, taskId={scheduledTask.Id})");
+                        break;
                     }
                 }
             }
@@ -159,26 +200,77 @@ namespace ControlTaskContinuationOrder
                 }
             }
 
-            Program.WriteLine($"**{this.ToString()}.ExecuteAllScheduledTasks(): End");
+            Program.WriteLine($"**{this.ToString()}.ExecuteScheduledTasks(): End"
+                            + "\n ::::::::::: ::::::::::: ::::::::::: ::::::::::: ::::::::::: ::::::::::: :::::::::::\n");
         }
 
-        private bool TryDequeueTaskn(out Task task)
+        private bool TryPeekScheduledTask(out Task task)
         {
             lock (_scheduledTasks)
             {
-                return _scheduledTasks.TryDequeue(out task);
+                return _scheduledTasks.TryPeek(out task);
             }
         }
 
-        private void EqueueTask(Task task)
+        private bool TryDequeueScheduledTask(out Task task)
+        {
+            lock (_scheduledTasks)
+            {
+                if (_scheduledTasks.TryDequeue(out task))
+                {
+                    if (_scheduledTasks.Count == 0)
+                    {
+                        Debug.Assert(_tasksScheduledCompletion == null || _tasksScheduledCompletion.Task.IsCompleted,
+                                     "We dequeued a Task, so _tasksScheduledCompletion must be either NULL or in Completed state.");
+                        _tasksScheduledCompletion = null;
+                    }
+
+                    return true;
+                }
+
+                return false;
+            }
+        }
+
+        private void EqueueScheduledTask(Task task)
         {
             lock (_scheduledTasks)
             {
                 _scheduledTasks.Enqueue(task);
+                _tasksScheduledCompletion?.TrySetResult();
             }
         }
 
+        private void ExecuteTask(object invocationStateObject)
+        {
+            if (invocationStateObject == null)
+            {
+                throw new ArgumentNullException(nameof(invocationStateObject));
+            }
 
+            if (! (invocationStateObject is ThreadPoolInvocationState invocationState))
+            {
+                throw new ArgumentException($"The specified {nameof(invocationStateObject)} was expected to be of type"
+                                          + $" {nameof(ThreadPoolInvocationState)}, but the actual type"
+                                          + $" was {invocationStateObject.GetType().FullName}.");
+            }
+
+            try
+            {
+                if (TryExecuteTaskInContext(invocationState.Task))
+                {
+                    invocationState.TrySetStatusSucceeded();
+                }
+                else
+                {
+                    invocationState.TrySetStatusCannotExecute();
+                }
+            }
+            catch (Exception ex)
+            {
+                invocationState.TrySetStatusFailed(ex);
+            }
+        }
 
         private bool TryExecuteTaskInContext(Task task)
         {
@@ -186,7 +278,9 @@ namespace ControlTaskContinuationOrder
 
             SynchronizationContext prevSyncCtx = SynchronizationContext.Current;
 
-            bool installSyncCtx = (prevSyncCtx != _syncCtx);
+            bool canSelfInstallSyncCtx = IsWorkActionInfoSet(task, WorkflowSynchronizationContext.WorkAction.Metadata.CanInstallSyncCtxInternally);
+            bool installSyncCtx = (prevSyncCtx != _syncCtx) && !canSelfInstallSyncCtx;
+
             if (installSyncCtx)
             {
                 SynchronizationContext.SetSynchronizationContext(_syncCtx);
@@ -195,7 +289,9 @@ namespace ControlTaskContinuationOrder
             bool canExecute;
             try
             {
+                Program.WriteLine($"**{this.ToString()}.TryExecuteTaskInContext(task.Id={task.Id}): 2  (instlCtx={installSyncCtx}, canSelfInstl={canSelfInstallSyncCtx})");
                 canExecute = TryExecuteTask(task);
+                Program.WriteLine($"**{this.ToString()}.TryExecuteTaskInContext(task.Id={task.Id}): 3  (instlCtx={installSyncCtx}, canSelfInstl={canSelfInstallSyncCtx})");
             }
             finally
             {
@@ -208,5 +304,135 @@ namespace ControlTaskContinuationOrder
             Program.WriteLine($"**{this.ToString()}.TryExecuteTaskInContext(task.Id={task.Id}): End  (canExecute={canExecute})");
             return canExecute;
         }
+
+        private static bool IsWorkActionInfoSet(Task task, WorkflowSynchronizationContext.WorkAction.Metadata check)
+        {
+            if (TryGetEmbeddedWorkAction(task, out WorkflowSynchronizationContext.WorkAction asyncCtxAction))
+            {
+                return asyncCtxAction.IsInfoSet(check);
+            }
+
+            return false;
+        }
+
+        private static bool TryGetEmbeddedWorkAction(Task task, out WorkflowSynchronizationContext.WorkAction asyncCtxWorkAction)
+        {
+            if (task != null && task.AsyncState != null && task.AsyncState is WorkflowSynchronizationContext.WorkAction asyncCtxAction)
+            {
+                asyncCtxWorkAction = asyncCtxAction;
+                return true;
+            }
+
+            asyncCtxWorkAction = null;
+            return false;
+        }
+
+        private sealed class ThreadPoolInvocationState : IDisposable
+        {
+            public static class ExecutionStatus
+            {
+                public const int NotStarted = 0;
+                public const int CannotExecute = 2;
+                public const int Succeeded = 3;
+                public const int Failed = 4;
+                
+            }
+
+            private Task _task = null;
+            private Exception _exception = null;
+            private int _status = ExecutionStatus.NotStarted;
+            private ManualResetEventSlim _completionSignal = new(initialState: false);
+
+            public Task Task
+            {
+                get { return _task; }
+            }
+
+            public int Status
+            {
+                get { return _status; }
+            }
+
+            private ManualResetEventSlim GetCompletionSignal()
+            {
+                ManualResetEventSlim completionSignal = _completionSignal;
+                if (completionSignal == null)
+                {
+                    throw new ObjectDisposedException($"This {nameof(ThreadPoolInvocationState)} instance is already disposed.");
+                }
+
+                return completionSignal;
+            }
+
+            public bool TrySetStatusCannotExecute()
+            {
+                if (ExecutionStatus.NotStarted != Interlocked.CompareExchange(ref _status, ExecutionStatus.CannotExecute, ExecutionStatus.NotStarted))
+                {
+                    return false;
+                }
+
+                GetCompletionSignal().Set();
+                return true;
+            }
+
+            public bool TrySetStatusSucceeded()
+            {
+                if (ExecutionStatus.NotStarted != Interlocked.CompareExchange(ref _status, ExecutionStatus.Succeeded, ExecutionStatus.NotStarted))
+                {
+                    return false;
+                }
+
+                GetCompletionSignal().Set();
+                return true;
+            }
+
+            public bool TrySetStatusFailed(Exception exception)
+            {
+                if (ExecutionStatus.NotStarted != Interlocked.CompareExchange(ref _status, ExecutionStatus.Failed, ExecutionStatus.NotStarted))
+                {
+                    return false;
+                }
+
+                _exception = exception;
+                GetCompletionSignal().Set();
+                return true;
+            }
+
+            public void WaitForCompletion()
+            {
+                GetCompletionSignal().Wait();
+            }
+
+            public bool TryGetException(out Exception exception)
+            {
+                exception = _exception;
+                return (exception != null);
+            }
+
+            public void Reset(Task task)
+            {
+                if (task == null)
+                {
+                    throw new ArgumentNullException(nameof(task));
+                }
+
+                ResetCore(task);
+            }
+
+            public void Dispose()
+            {
+                ResetCore(task: null);
+                ManualResetEventSlim completionSignal = Interlocked.Exchange(ref _completionSignal, null);
+                completionSignal?.Dispose();
+            }
+
+            private void ResetCore(Task task)
+            {
+                _task = task;
+                _exception = null;
+                _status = ExecutionStatus.NotStarted;
+                GetCompletionSignal().Reset();
+            }
+        }  // class ThreadPoolInvocationState
     }
 }
