@@ -2,11 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace System.Runtime.CompilerServices
-{
-    internal static class IsExternalInit { }
-}
-
 namespace ControlTaskContinuationOrder
 {
     public class Program

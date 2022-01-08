@@ -1,9 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>    
-    <TargetFrameworks>net462;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
-    <LangVersion>9.0</LangVersion>
+    <OutputType>Exe</OutputType>        
   </PropertyGroup>
 
 </Project>

@@ -24,7 +24,7 @@ namespace Temporal.Sdk.BasicSamples
             private const int SingleWorkflowRunIterations = 10000;
             private const string AddresseeNameDefault = "Boss";
 
-            private TaskCompletionSource _requestExit = new TaskCompletionSource();
+            private TaskCompletionSource<bool> _requestExit = new TaskCompletionSource<bool>();
 
             public async Task GreetRegularlyAsync(SpeechRequest nameInfo, WorkflowContext workflowCtx)
             {
@@ -64,7 +64,7 @@ namespace Temporal.Sdk.BasicSamples
             [WorkflowSignalHandler]
             public void RequestExit()
             {
-                _requestExit.TrySetResult();
+                _requestExit.TrySetResult(true);
             }
         }
 

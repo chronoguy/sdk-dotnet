@@ -20,7 +20,7 @@ namespace Temporal.Sdk.BasicSamples
 
             private DateTime _targetTimeUtc;
 
-            private TaskCompletionSource _requestAbort = new TaskCompletionSource();
+            private TaskCompletionSource<bool> _requestAbort = new TaskCompletionSource<bool>();
             private TaskCompletionSource<DateTime> _updateTarget = new TaskCompletionSource<DateTime>();
 
             public async Task<CountdownResult> CountdownAsync(TargetTimePayload target, WorkflowContext workflowCtx)
@@ -98,7 +98,7 @@ namespace Temporal.Sdk.BasicSamples
             [WorkflowSignalHandler]
             public void RequestAbort()
             {
-                _requestAbort.TrySetResult();
+                _requestAbort.TrySetResult(true);
             }
 
             [WorkflowSignalHandler(SignalTypeName = RemoteApiNames.CountdownTimerWorkflow.Signals.UpdateTargetTime)]

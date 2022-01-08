@@ -112,7 +112,7 @@ namespace Temporal.Worker.Workflows.Dynamic
     public interface IHandlerCollection<THandler> where THandler : class
     {
         int Count { get; }
-        void Clear() { }
+        void Clear();
         void GetAt(int index, out string matcherRegex, out THandler handler);
         void RemoveAt(int index);
         void RemoveAt(int index, out string matcherRegex, out THandler handler);
