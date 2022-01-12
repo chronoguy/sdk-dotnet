@@ -32,6 +32,7 @@ namespace Temporal.Worker.Workflows
         Task<bool> SleepUntilAsync(DateTime sleepEndUtc, CancellationToken cancelToken);
 
         IPayloadSerializer GetSerializer(PayloadsCollection payloads);
+        IPayloadSerializer GetSerializer();
     }
 
     internal class WorkflowContext : IWorkflowContext, IDynamicWorkflowContext
@@ -55,8 +56,10 @@ namespace Temporal.Worker.Workflows
         /// <summary>Get the serializer for the specified payload.
         /// If metadata specifies an available serializer - get that one;
         /// If metadata specifies an unavailable serializer - throw;
-        /// If metadata specified nothing - get the default form the config.</summary>        
+        /// If metadata specified nothing - get the default form the config.
+        /// If nothing configured - get JSON.</summary>        
         public IPayloadSerializer GetSerializer(PayloadsCollection payloads) { return null; }
+        public IPayloadSerializer GetSerializer() { return null; }
     }
 
     // ----------- -----------

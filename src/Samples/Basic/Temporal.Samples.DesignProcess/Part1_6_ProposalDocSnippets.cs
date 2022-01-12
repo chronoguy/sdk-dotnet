@@ -12,28 +12,69 @@ namespace Temporal.Sdk.BasicSamples
 {
     public class Part1_6_ProposalDocSnippets
     {
+
+
+        [Workflow(runMethod: nameof(RunAsync))]
+        public class ProcessCustomer
+        {
+            public async Task RunAsync(Customer customerInfo, IWorkflowContext workflowCtx)
+            {
+                string fullName = $"{customerInfo.FirstName} {customerInfo.LastName}";
+
+                PayloadsCollection payload = workflowCtx.GetSerializer().Serialize(fullName);
+                await workflowCtx.Activities.ExecuteAsync("DisplayCustomerGreeting", payload);
+
+                string cId = GetCustomerId(customerInfo);
+
+                // Invoke a .NET activity:
+                CustomerRating rating1 = await workflowCtx.Activities.ExecuteAsync<CustomerId, CustomerRating>("ReadCustomerRating1", new CustomerId(cId));
+
+                // Invoke an equivalent activity implemented in another language:
+                PayloadsCollection cIdPayload = workflowCtx.GetSerializer().Serialize(cId);
+                PayloadsCollection ratingPayload = await workflowCtx.Activities.ExecuteAsync("ReadCustomerRating2", cIdPayload);
+                CustomerRating rating2 = workflowCtx.GetSerializer(ratingPayload).Deserialize<CustomerRating>(ratingPayload);
+            }
+
+            private string GetCustomerId(Customer _)
+            {
+                return "The appropriate customer id";
+            }
+        }
+             
+        public record Customer(string FirstName, string LastName, string NickName) : IDataValue;
+        public record CustomerId(string Value) : IDataValue;
+        public record CustomerRating(int Value) : IDataValue;
+
+
         [Workflow(runMethod: nameof(MainAsync))]
         public class SomeWorkflow
         {
             private bool _isConditionMet = false;
+            private int _countSomeActivityCompletions = 0;
 
-            public Task MainAsync(IWorkflowContext workflowCtx)
+            public async Task MainAsync(IWorkflowContext workflowCtx)
             {
                 while (! _isConditionMet)
                 {
-                    Task someActivity = workflowCtx.Activities.ExecuteAsync("SomeActivity");
-                    //PerformSome
-                }
-
-                return null;
+                    await workflowCtx.Activities.ExecuteAsync("SomeActivity");
+                    _countSomeActivityCompletions++;
+                }                                
             }
-
+        
             [WorkflowSignalHandler]
-            public void NotifyConditionMetAsync()
+            public void NotifyConditionMet()
             {
                 _isConditionMet = true;
             }
+
+            [WorkflowQueryHandler]
+            public SomeActivityStats CountSomeActivityCompletions()
+            {
+                return new SomeActivityStats(_countSomeActivityCompletions);
+            }
         }
+
+        public record SomeActivityStats(int CountCompletions) : IDataValue;
 
         /// <summary>
         /// Parameters to workflow APIs (main method, signal & query parameters) and to activities must implement <see cref="IDataValue" />.
@@ -73,15 +114,13 @@ namespace Temporal.Sdk.BasicSamples
                         serviceCollection.AddTemporalWorker()
                                 .Configure(temporalWorkerConfig =>
                                 {
-                                    temporalWorkerConfig.TaskQueue = "Some Queue";
+                                    temporalWorkerConfig.TaskQueue = "SomeTaskQueue";
                                 });
-
+        
                         serviceCollection.AddWorkflowWithAttributes<SomeWorkflow>();
-
-                        serviceCollection.AddActivity<SpeechRequest>("SpeakAGreeting", Speak.GreetingAsync);
                     })
                     .Build();
-
+        
             appHost.Run();
         }
     }
