@@ -240,7 +240,9 @@ namespace Temporal.Worker.Workflows
         public string RunMethod { get; }
 
         public string WorkflowTypeName { get; set; }
-        
+
+        public bool IsWorkflowTypeNameSetExplicitly { get; }
+
         public WorkflowAttribute(string runMethod)
         {
             RunMethod = runMethod;
