@@ -101,7 +101,7 @@ public static void Main(string[] args)
                 serviceCollection.AddTemporalWorker()
                         .Configure(temporalWorkerConfig =>
                         {
-                            temporalWorkerConfig.TaskQueueMoniker = "SomeTaskQueue";
+                            temporalWorkerConfig.TaskQueue = "SomeTaskQueue";
                         });
 
                 serviceCollection.AddWorkflowWithAttributes<SomeWorkflow>();

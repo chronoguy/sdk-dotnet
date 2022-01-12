@@ -25,7 +25,7 @@ namespace Temporal.Sdk.BasicSamples
             TemporalServiceClientConfiguration serviceConfig = new();
             TemporalServiceNamespaceClient serviceClient = await (new TemporalServiceClient(serviceConfig)).GetNamespaceClientAsync();
             
-            WorkflowRun workflowRun = await serviceClient.GetNewWorkflow("workflowTypeName").StartNewRunAsync("taskQueueMoniker");
+            WorkflowRun workflowRun = await serviceClient.GetNewWorkflow("workflowTypeName").StartNewRunAsync("taskQueue");
 
             WorkflowRunResult result = await workflowRun.GetResultAsync();
             result.GetValue();
@@ -38,7 +38,7 @@ namespace Temporal.Sdk.BasicSamples
             TemporalServiceNamespaceClient serviceNamespaceClient = await serviceClient.GetNamespaceClientAsync("namespace");
 
             Workflow workflowClient = await serviceNamespaceClient.GetWorkflowAsync("workflowTypeName", "workflowId");
-            WorkflowRun workflowRun = await workflowClient.GetActiveOrStartNewRunAsync("taskQueueMoniker");
+            WorkflowRun workflowRun = await workflowClient.GetActiveOrStartNewRunAsync("taskQueue");
 
             WorkflowRunResult result = await workflowRun.GetResultAsync();
             result.GetValue();
@@ -51,7 +51,7 @@ namespace Temporal.Sdk.BasicSamples
             TemporalServiceNamespaceClient serviceNamespaceClient = await serviceClient.GetNamespaceClientAsync("namespace");
 
             Workflow workflowClient = await serviceNamespaceClient.GetWorkflowAsync("workflowTypeName", "workflowId");
-            WorkflowRun workflowRun = await workflowClient.GetActiveOrStartNewRunAsync("taskQueueMoniker");
+            WorkflowRun workflowRun = await workflowClient.GetActiveOrStartNewRunAsync("taskQueue");
 
             if ((await workflowRun.TryGetResultIfAvailableAync()).IsSuccess(out WorkflowRunResult result))
             {                                
@@ -78,7 +78,7 @@ namespace Temporal.Sdk.BasicSamples
             TemporalServiceNamespaceClient serviceNamespaceClient = await serviceClient.GetNamespaceClientAsync("namespace");
 
             Workflow workflowClient = serviceNamespaceClient.GetNewWorkflow("ComputeSomeNumber");
-            WorkflowRun workflowRun = await workflowClient.StartNewRunAsync("taskQueueMoniker");
+            WorkflowRun workflowRun = await workflowClient.StartNewRunAsync("taskQueue");
 
             WorkflowRunResult<ComputationResult> result = await workflowRun.GetResultAsync<ComputationResult>();
             Console.WriteLine($"The result of the workflow is {result.GetValue().Number}.");            
@@ -91,7 +91,7 @@ namespace Temporal.Sdk.BasicSamples
             TemporalServiceNamespaceClient serviceNamespaceClient = await serviceClient.GetNamespaceClientAsync("namespace");
 
             Workflow workflowClient = serviceNamespaceClient.GetNewWorkflow("ComputeSomeNumber");
-            WorkflowRun workflowRun = await workflowClient.StartNewRunAsync("taskQueueMoniker");
+            WorkflowRun workflowRun = await workflowClient.StartNewRunAsync("taskQueue");
 
             WorkflowRunResult<ComputationResult> result = await workflowRun.GetFinalWorkflowResultAsync<ComputationResult>();
             Console.WriteLine($"The result of the workflow, including all continue-as-new runs, is {result.GetValue().Number}.");
@@ -106,7 +106,7 @@ namespace Temporal.Sdk.BasicSamples
             Workflow workflowClient = serviceNamespaceClient.GetNewWorkflow("CountdownTimer");
 
             // Start countdown timer to finish in 1 min:            
-            WorkflowRun workflowRun = await workflowClient.StartNewRunAsync("taskQueueMoniker",
+            WorkflowRun workflowRun = await workflowClient.StartNewRunAsync("taskQueue",
                                                                             new TargetTimePayload(DateTime.UtcNow.AddMinutes(1)));
 
             // Do something else...

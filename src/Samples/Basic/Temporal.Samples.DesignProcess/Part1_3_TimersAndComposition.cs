@@ -121,7 +121,7 @@ namespace Temporal.Sdk.BasicSamples
                         serviceCollection.AddTemporalWorker()
                                 .Configure(temporalWorkerConfig =>
                                 {
-                                    temporalWorkerConfig.TaskQueueMoniker = "Some Queue";
+                                    temporalWorkerConfig.TaskQueue = "Some Queue";
                                 });
 
                         serviceCollection.AddWorkflowWithAttributes<HelloPeriodicWorkflow>();

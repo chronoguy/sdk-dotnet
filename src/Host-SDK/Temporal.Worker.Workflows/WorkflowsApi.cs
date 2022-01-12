@@ -152,7 +152,7 @@ namespace Temporal.Worker.Workflows
 
     public interface IActivityInvocationConfiguration
     {
-        string TaskQueueMoniker { get; }
+        string TaskQueue { get; }
         int ScheduleToStartTimeoutMillisecs { get; }
         int ScheduleToCloseTimeoutMillisecs { get; }
         int StartToCloseTimeoutMillisecs { get; }
@@ -162,7 +162,7 @@ namespace Temporal.Worker.Workflows
 
     public class ActivityInvocationConfiguration : IActivityInvocationConfiguration
     {
-        public string TaskQueueMoniker { get; set; }
+        public string TaskQueue { get; set; }
         public int ScheduleToStartTimeoutMillisecs { get; set; }
         public int ScheduleToCloseTimeoutMillisecs { get; set; }
         public int StartToCloseTimeoutMillisecs { get; set; }

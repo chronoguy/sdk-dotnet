@@ -79,7 +79,7 @@ namespace Temporal.Sdk.BasicSamples
                         serviceCollection.AddTemporalWorker()
                                 .Configure(temporalWorkerConfig =>
                                 {
-                                    temporalWorkerConfig.TaskQueueMoniker = "Some Queue";
+                                    temporalWorkerConfig.TaskQueue = "Some Queue";
                                 });
 
                         serviceCollection.AddWorkflowWithOverrides<SayHelloWorkflow>();
@@ -116,7 +116,7 @@ namespace Temporal.Sdk.BasicSamples
                         serviceCollection.AddTemporalWorker()
                                 .Configure(temporalWorkerConfig =>
                                 {
-                                    temporalWorkerConfig.TaskQueueMoniker = "Some Queue";
+                                    temporalWorkerConfig.TaskQueue = "Some Queue";
                                 });
 
                         serviceCollection.AddWorkflowWithOverrides<SayHelloWorkflow>()
@@ -128,7 +128,7 @@ namespace Temporal.Sdk.BasicSamples
                                 {
                                     workflowImplementationConfig.DefaultPayloadSerializer = serviceProvider.GetService<JsonPayloadSerializer>();
 
-                                    workflowImplementationConfig.DefaultActivityInvocationConfig.TaskQueueMoniker = "My Queue";
+                                    workflowImplementationConfig.DefaultActivityInvocationConfig.TaskQueue = "My Queue";
                                     workflowImplementationConfig.DefaultActivityInvocationConfig.StartToCloseTimeoutMillisecs = 5_000;
                                     workflowImplementationConfig.DefaultActivityInvocationConfig.ScheduleToStartTimeoutMillisecs = 1_000;
                                 });
@@ -153,7 +153,7 @@ namespace Temporal.Sdk.BasicSamples
                         serviceCollection.AddTemporalWorker()
                                 .Configure(temporalWorkerConfig =>
                                 {
-                                    temporalWorkerConfig.TaskQueueMoniker = "Some Queue";
+                                    temporalWorkerConfig.TaskQueue = "Some Queue";
 
                                     temporalWorkerConfig.EnablePollForActivities = true;
                                     temporalWorkerConfig.CachedStickyWorkflowsMax = 0;
@@ -183,12 +183,12 @@ namespace Temporal.Sdk.BasicSamples
                                 temporalServiceConfig.Namespace = "MyNamespace";
                                 temporalServiceConfig.OrchestratorServiceUrl = "http://api.endpoint.com:12345";
 
-                                temporalWorkerConfig.TaskQueueMoniker = "My Queue";
+                                temporalWorkerConfig.TaskQueue = "My Queue";
                                 temporalWorkerConfig.StickyQueue.ScheduleToStartTimeoutMillisecs = 500;
 
                                 workflowExecutionConfig.WorkflowTaskTimeoutMillisec = 1000;
 
-                                workflowImplementationConfig.DefaultActivityInvocationConfig.TaskQueueMoniker = "My Other Queue";
+                                workflowImplementationConfig.DefaultActivityInvocationConfig.TaskQueue = "My Other Queue";
                             })
                     .ConfigureServices(serviceCollection =>
                     {

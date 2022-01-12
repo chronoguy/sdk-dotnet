@@ -182,7 +182,7 @@ namespace Temporal.Sdk.BasicSamples
                         serviceCollection.AddTemporalWorker()
                                 .Configure(temporalWorkerConfiguration =>
                                 {
-                                    temporalWorkerConfiguration.TaskQueueMoniker = "Some Queue";
+                                    temporalWorkerConfiguration.TaskQueue = "Some Queue";
                                 });
 
                         serviceCollection.AddWorkflowWithOverrides<CustomWorkflowExecutor>();

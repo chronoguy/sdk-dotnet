@@ -100,11 +100,11 @@ namespace Temporal.WorkflowClient
         public Task<IPaginatedReadOnlyCollectionPage<WorkflowRun>> ListRunsAsync(NeedsDesign oneOrMoreArgs) { return null; }
 
         #region StartNewRunAsync(..)
-        public Task<WorkflowRun> StartNewRunAsync(string taskQueueMoniker) { return null; }
-        public Task<WorkflowRun> StartNewRunAsync(string taskQueueMoniker, CancellationToken cancelToken) { return null; }
+        public Task<WorkflowRun> StartNewRunAsync(string taskQueue) { return null; }
+        public Task<WorkflowRun> StartNewRunAsync(string taskQueue, CancellationToken cancelToken) { return null; }
 
-        public Task<WorkflowRun> StartNewRunAsync<TArg>(string taskQueueMoniker, TArg args) where TArg : IDataValue { return null; }
-        public Task<WorkflowRun> StartNewRunAsync<TArg>(string taskQueueMoniker, TArg args, CancellationToken cancelToken) where TArg : IDataValue { return null; }
+        public Task<WorkflowRun> StartNewRunAsync<TArg>(string taskQueue, TArg args) where TArg : IDataValue { return null; }
+        public Task<WorkflowRun> StartNewRunAsync<TArg>(string taskQueue, TArg args, CancellationToken cancelToken) where TArg : IDataValue { return null; }
 
         public Task<WorkflowRun> StartNewRunAsync(IWorkflowExecutionConfiguration workflowRunConfig) { return null; }
         public Task<WorkflowRun> StartNewRunAsync(IWorkflowExecutionConfiguration workflowRunConfig, CancellationToken cancelToken) { return null; }
@@ -117,11 +117,11 @@ namespace Temporal.WorkflowClient
 
 
         #region TryStartNewRunAsync(..)
-        public Task<TryGetResult<WorkflowRun>> TryStartNewRunAsync(string taskQueueMoniker) { return null; }
-        public Task<TryGetResult<WorkflowRun>> TryStartNewRunAsync(string taskQueueMoniker, CancellationToken cancelToken) { return null; }
+        public Task<TryGetResult<WorkflowRun>> TryStartNewRunAsync(string taskQueue) { return null; }
+        public Task<TryGetResult<WorkflowRun>> TryStartNewRunAsync(string taskQueue, CancellationToken cancelToken) { return null; }
 
-        public Task<TryGetResult<WorkflowRun>> TryStartNewRunAsync<TArg>(string taskQueueMoniker, TArg args) where TArg : IDataValue { return null; }
-        public Task<TryGetResult<WorkflowRun>> TryStartNewRunAsync<TArg>(string taskQueueMoniker, TArg args, CancellationToken cancelToken) where TArg : IDataValue { return null; }
+        public Task<TryGetResult<WorkflowRun>> TryStartNewRunAsync<TArg>(string taskQueue, TArg args) where TArg : IDataValue { return null; }
+        public Task<TryGetResult<WorkflowRun>> TryStartNewRunAsync<TArg>(string taskQueue, TArg args, CancellationToken cancelToken) where TArg : IDataValue { return null; }
 
         public Task<TryGetResult<WorkflowRun>> TryStartNewRunAsync(IWorkflowExecutionConfiguration workflowRunConfig) { return null; }
         public Task<TryGetResult<WorkflowRun>> TryStartNewRunAsync(IWorkflowExecutionConfiguration workflowRunConfig, CancellationToken cancelToken) { return null; }
@@ -134,17 +134,17 @@ namespace Temporal.WorkflowClient
 
 
         #region StartNewRunWithSignalAsync(..)
-        public Task<WorkflowRun> StartNewRunWithSignalAsync(string taskQueueMoniker, string signalName) { return null; }
-        public Task<WorkflowRun> StartNewRunWithSignalAsync(string taskQueueMoniker, string signalName, CancellationToken cancelToken) { return null; }
+        public Task<WorkflowRun> StartNewRunWithSignalAsync(string taskQueue, string signalName) { return null; }
+        public Task<WorkflowRun> StartNewRunWithSignalAsync(string taskQueue, string signalName, CancellationToken cancelToken) { return null; }
 
-        public Task<WorkflowRun> StartNewRunWithSignalAsync<TSigArg>(string taskQueueMoniker, string signalName, TSigArg signalArgs) where TSigArg : IDataValue { return null; }
-        public Task<WorkflowRun> StartNewRunWithSignalAsync<TSigArg>(string taskQueueMoniker, string signalName, TSigArg signalArgs, CancellationToken cancelToken) where TSigArg : IDataValue { return null; }
+        public Task<WorkflowRun> StartNewRunWithSignalAsync<TSigArg>(string taskQueue, string signalName, TSigArg signalArgs) where TSigArg : IDataValue { return null; }
+        public Task<WorkflowRun> StartNewRunWithSignalAsync<TSigArg>(string taskQueue, string signalName, TSigArg signalArgs, CancellationToken cancelToken) where TSigArg : IDataValue { return null; }
 
-        public Task<WorkflowRun> StartNewRunWithSignalAsync<TWfArg>(string taskQueueMoniker, TWfArg workflowArgs, string signalName) where TWfArg : IDataValue { return null; }
-        public Task<WorkflowRun> StartNewRunWithSignalAsync<TWfArg>(string taskQueueMoniker, TWfArg workflowArgs, string signalName, CancellationToken cancelToken) where TWfArg : IDataValue { return null; }
+        public Task<WorkflowRun> StartNewRunWithSignalAsync<TWfArg>(string taskQueue, TWfArg workflowArgs, string signalName) where TWfArg : IDataValue { return null; }
+        public Task<WorkflowRun> StartNewRunWithSignalAsync<TWfArg>(string taskQueue, TWfArg workflowArgs, string signalName, CancellationToken cancelToken) where TWfArg : IDataValue { return null; }
 
-        public Task<WorkflowRun> StartNewRunWithSignalAsync<TWfArg, TSigArg>(string taskQueueMoniker, TWfArg workflowArgs, string signalName, TSigArg signalArgs) where TWfArg : IDataValue where TSigArg : IDataValue { return null; }
-        public Task<WorkflowRun> StartNewRunWithSignalAsync<TWfArg, TSigArg>(string taskQueueMoniker, TWfArg workflowArgs, string signalName, TSigArg signalArgs, CancellationToken cancelToken) where TWfArg : IDataValue where TSigArg : IDataValue { return null; }
+        public Task<WorkflowRun> StartNewRunWithSignalAsync<TWfArg, TSigArg>(string taskQueue, TWfArg workflowArgs, string signalName, TSigArg signalArgs) where TWfArg : IDataValue where TSigArg : IDataValue { return null; }
+        public Task<WorkflowRun> StartNewRunWithSignalAsync<TWfArg, TSigArg>(string taskQueue, TWfArg workflowArgs, string signalName, TSigArg signalArgs, CancellationToken cancelToken) where TWfArg : IDataValue where TSigArg : IDataValue { return null; }
 
         public Task<WorkflowRun> StartNewRunWithSignalAsync(IWorkflowExecutionConfiguration workflowRunConfig, string signalName) { return null; }
         public Task<WorkflowRun> StartNewRunWithSignalAsync(IWorkflowExecutionConfiguration workflowRunConfig, string signalName, CancellationToken cancelToken) { return null; }
@@ -163,17 +163,17 @@ namespace Temporal.WorkflowClient
 
 
         #region TryStartNewRunWithSignalAsync(..)
-        public Task<TryGetResult<WorkflowRun>> TryStartNewRunWithSignalAsync(string taskQueueMoniker, string signalName) { return null; }
-        public Task<TryGetResult<WorkflowRun>> TryStartNewRunWithSignalAsync(string taskQueueMoniker, string signalName, CancellationToken cancelToken) { return null; }
+        public Task<TryGetResult<WorkflowRun>> TryStartNewRunWithSignalAsync(string taskQueue, string signalName) { return null; }
+        public Task<TryGetResult<WorkflowRun>> TryStartNewRunWithSignalAsync(string taskQueue, string signalName, CancellationToken cancelToken) { return null; }
 
-        public Task<TryGetResult<WorkflowRun>> TryStartNewRunWithSignalAsync<TSigArg>(string taskQueueMoniker, string signalName, TSigArg signalArgs) where TSigArg : IDataValue { return null; }
-        public Task<TryGetResult<WorkflowRun>> TryStartNewRunWithSignalAsync<TSigArg>(string taskQueueMoniker, string signalName, TSigArg signalArgs, CancellationToken cancelToken) where TSigArg : IDataValue { return null; }
+        public Task<TryGetResult<WorkflowRun>> TryStartNewRunWithSignalAsync<TSigArg>(string taskQueue, string signalName, TSigArg signalArgs) where TSigArg : IDataValue { return null; }
+        public Task<TryGetResult<WorkflowRun>> TryStartNewRunWithSignalAsync<TSigArg>(string taskQueue, string signalName, TSigArg signalArgs, CancellationToken cancelToken) where TSigArg : IDataValue { return null; }
 
-        public Task<TryGetResult<WorkflowRun>> TryStartNewRunWithSignalAsync<TWfArg>(string taskQueueMoniker, TWfArg workflowArgs, string signalName) where TWfArg : IDataValue { return null; }
-        public Task<TryGetResult<WorkflowRun>> TryStartNewRunWithSignalAsync<TWfArg>(string taskQueueMoniker, TWfArg workflowArgs, string signalName, CancellationToken cancelToken) where TWfArg : IDataValue { return null; }
+        public Task<TryGetResult<WorkflowRun>> TryStartNewRunWithSignalAsync<TWfArg>(string taskQueue, TWfArg workflowArgs, string signalName) where TWfArg : IDataValue { return null; }
+        public Task<TryGetResult<WorkflowRun>> TryStartNewRunWithSignalAsync<TWfArg>(string taskQueue, TWfArg workflowArgs, string signalName, CancellationToken cancelToken) where TWfArg : IDataValue { return null; }
 
-        public Task<TryGetResult<WorkflowRun>> TryStartNewRunWithSignalAsync<TWfArg, TSigArg>(string taskQueueMoniker, TWfArg workflowArgs, string signalName, TSigArg signalArgs) where TWfArg : IDataValue where TSigArg : IDataValue { return null; }
-        public Task<TryGetResult<WorkflowRun>> TryStartNewRunWithSignalAsync<TWfArg, TSigArg>(string taskQueueMoniker, TWfArg workflowArgs, string signalName, TSigArg signalArgs, CancellationToken cancelToken) where TWfArg : IDataValue where TSigArg : IDataValue { return null; }
+        public Task<TryGetResult<WorkflowRun>> TryStartNewRunWithSignalAsync<TWfArg, TSigArg>(string taskQueue, TWfArg workflowArgs, string signalName, TSigArg signalArgs) where TWfArg : IDataValue where TSigArg : IDataValue { return null; }
+        public Task<TryGetResult<WorkflowRun>> TryStartNewRunWithSignalAsync<TWfArg, TSigArg>(string taskQueue, TWfArg workflowArgs, string signalName, TSigArg signalArgs, CancellationToken cancelToken) where TWfArg : IDataValue where TSigArg : IDataValue { return null; }
 
         public Task<TryGetResult<WorkflowRun>> TryStartNewRunWithSignalAsync(IWorkflowExecutionConfiguration workflowRunConfig, string signalName) { return null; }
         public Task<TryGetResult<WorkflowRun>> TryStartNewRunWithSignalAsync(IWorkflowExecutionConfiguration workflowRunConfig, string signalName, CancellationToken cancelToken) { return null; }
@@ -192,11 +192,11 @@ namespace Temporal.WorkflowClient
 
 
         #region GetActiveOrStartNewRunAsync(..)
-        public Task<WorkflowRun> GetActiveOrStartNewRunAsync(string taskQueueMoniker) { return null; }
-        public Task<WorkflowRun> GetActiveOrStartNewRunAsync(string taskQueueMoniker, CancellationToken cancelToken) { return null; }
+        public Task<WorkflowRun> GetActiveOrStartNewRunAsync(string taskQueue) { return null; }
+        public Task<WorkflowRun> GetActiveOrStartNewRunAsync(string taskQueue, CancellationToken cancelToken) { return null; }
 
-        public Task<WorkflowRun> GetActiveOrStartNewRunAsync<TArg>(string taskQueueMoniker, TArg args) where TArg : IDataValue { return null; }
-        public Task<WorkflowRun> GetActiveOrStartNewRunAsync<TArg>(string taskQueueMoniker, TArg args, CancellationToken cancelToken) where TArg : IDataValue { return null; }
+        public Task<WorkflowRun> GetActiveOrStartNewRunAsync<TArg>(string taskQueue, TArg args) where TArg : IDataValue { return null; }
+        public Task<WorkflowRun> GetActiveOrStartNewRunAsync<TArg>(string taskQueue, TArg args, CancellationToken cancelToken) where TArg : IDataValue { return null; }
 
         public Task<WorkflowRun> GetActiveOrStartNewRunAsync(IWorkflowExecutionConfiguration workflowRunConfig) { return null; }
         public Task<WorkflowRun> GetActiveOrStartNewRunAsync(IWorkflowExecutionConfiguration workflowRunConfig, CancellationToken cancelToken) { return null; }
@@ -209,11 +209,11 @@ namespace Temporal.WorkflowClient
 
 
         #region TryGetActiveOrStartNewRunAsync(..)
-        public Task<TryGetResult<WorkflowRun>> TryGetActiveOrStartNewRunAsync(string taskQueueMoniker) { return null; }
-        public Task<TryGetResult<WorkflowRun>> TryGetActiveOrStartNewRunAsync(string taskQueueMoniker, CancellationToken cancelToken) { return null; }
+        public Task<TryGetResult<WorkflowRun>> TryGetActiveOrStartNewRunAsync(string taskQueue) { return null; }
+        public Task<TryGetResult<WorkflowRun>> TryGetActiveOrStartNewRunAsync(string taskQueue, CancellationToken cancelToken) { return null; }
 
-        public Task<TryGetResult<WorkflowRun>> TryGetActiveOrStartNewRunAsync<TArg>(string taskQueueMoniker, TArg args) where TArg : IDataValue { return null; }
-        public Task<TryGetResult<WorkflowRun>> TryGetActiveOrStartNewRunAsync<TArg>(string taskQueueMoniker, TArg args, CancellationToken cancelToken) where TArg : IDataValue { return null; }
+        public Task<TryGetResult<WorkflowRun>> TryGetActiveOrStartNewRunAsync<TArg>(string taskQueue, TArg args) where TArg : IDataValue { return null; }
+        public Task<TryGetResult<WorkflowRun>> TryGetActiveOrStartNewRunAsync<TArg>(string taskQueue, TArg args, CancellationToken cancelToken) where TArg : IDataValue { return null; }
 
         public Task<TryGetResult<WorkflowRun>> TryGetActiveOrStartNewRunAsync(IWorkflowExecutionConfiguration workflowRunConfig) { return null; }
         public Task<TryGetResult<WorkflowRun>> TryGetActiveOrStartNewRunAsync(IWorkflowExecutionConfiguration workflowRunConfig, CancellationToken cancelToken) { return null; }
@@ -288,13 +288,13 @@ namespace Temporal.WorkflowClient
                                      runConfig: null);
         }
 
-        public TStub GetRunStub<TStub>(string taskQueueMoniker)
+        public TStub GetRunStub<TStub>(string taskQueue)
         {
             return GetRunStub<TStub>(new WorkflowRunStubConfiguration(canBindToNewRun: true,
                                                                       canBindToExistingActiveRun: true,
                                                                       canBindToExistingFinishedRun: true,
                                                                       mustBindToNewIfContinued: false),
-                                     new WorkflowExecutionConfiguration(taskQueueMoniker));
+                                     new WorkflowExecutionConfiguration(taskQueue));
         }
 
         public TStub GetRunStub<TStub>(IWorkflowExecutionConfiguration runConfig)

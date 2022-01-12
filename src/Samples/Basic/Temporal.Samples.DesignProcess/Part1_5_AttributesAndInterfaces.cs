@@ -274,7 +274,7 @@ namespace Temporal.Sdk.BasicSamples
                         serviceCollection.AddTemporalWorker()
                                 .Configure(temporalWorkerConfig =>
                                 {
-                                    temporalWorkerConfig.TaskQueueMoniker = "taskQueueMoniker";
+                                    temporalWorkerConfig.TaskQueue = "taskQueue";
                                 });
 
                         serviceCollection.AddWorkflowWithAttributes<ShoppingCart>();

@@ -15,7 +15,7 @@ namespace Temporal.Sdk.BasicSamples
             TemporalServiceClientConfiguration serviceConfig = new();
             TemporalServiceNamespaceClient serviceClient = await (new TemporalServiceClient(serviceConfig)).GetNamespaceClientAsync();
 
-            IShoppingCart cart = serviceClient.GetNewWorkflow("ShoppingCart").GetRunStub<IShoppingCart>("taskQueueMoniker");
+            IShoppingCart cart = serviceClient.GetNewWorkflow("ShoppingCart").GetRunStub<IShoppingCart>("taskQueue");
 
             Task<OrderConfirmation> order = cart.ShopAsync(new User("Jean-Luc", "Picard", Guid.NewGuid()));
             await cart.AddProductAsync(new Product("Starship Model", new MoneyAmount(42, 99)));
@@ -162,7 +162,7 @@ namespace Temporal.Sdk.BasicSamples
             TemporalServiceNamespaceClient client = await GetShoppingNamespaceClientAsync();
 
             Workflow userVisits = await client.GetWorkflowAsync("ShoppingCart", shopper.UserKey);
-            IShoppingCart cart = userVisits.GetRunStub<IShoppingCart>("taskQueueMoniker");
+            IShoppingCart cart = userVisits.GetRunStub<IShoppingCart>("taskQueue");
 
             await AddProductToNewOrExistingCart_Logic(shopper, product, cart);
         }

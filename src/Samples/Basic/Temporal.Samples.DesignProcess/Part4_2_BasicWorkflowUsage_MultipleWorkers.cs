@@ -114,13 +114,13 @@ namespace Temporal.Sdk.BasicSamples
                         WorkerRegistration workerRegistration1 = serviceCollection.AddTemporalWorker()
                                 .Configure(temporalWorkerConfiguration =>
                                 {
-                                    temporalWorkerConfiguration.TaskQueueMoniker = "Some Queue";
+                                    temporalWorkerConfiguration.TaskQueue = "Some Queue";
                                 });
 
                         WorkerRegistration workerRegistration2 = serviceCollection.AddTemporalWorker()
                                 .Configure(temporalWorkerConfiguration =>
                                 {
-                                    temporalWorkerConfiguration.TaskQueueMoniker = "Some Other Queue";
+                                    temporalWorkerConfiguration.TaskQueue = "Some Other Queue";
                                 });
 
                         // The following workflows and activities will be assigned to the First Worker:

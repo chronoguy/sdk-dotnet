@@ -181,7 +181,7 @@ namespace Temporal.Worker.Hosting
 
     public interface ITemporalWorkerConfiguration
     {
-        string TaskQueueMoniker { get; }
+        string TaskQueue { get; }
         int CachedStickyWorkflowsMax { get; }
         bool EnablePollForActivities { get; }
         IQueuePollingConfiguration NonStickyQueue { get; }
@@ -190,7 +190,7 @@ namespace Temporal.Worker.Hosting
 
     public class TemporalWorkerConfiguration : ITemporalWorkerConfiguration
     {
-        public string TaskQueueMoniker { get; set; }
+        public string TaskQueue { get; set; }
         public int CachedStickyWorkflowsMax { get; set; }
         public bool EnablePollForActivities { get; set; }
         public QueuePollingConfiguration NonStickyQueue { get; set; }

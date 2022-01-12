@@ -21,7 +21,7 @@ namespace Temporal.Common.WorkflowConfiguration
     public interface IWorkflowExecutionConfiguration
     {
         int WorkflowTaskTimeoutMillisec { get; }
-        string TaskQueueMoniker { get; }
+        string TaskQueue { get; }
 
         // Add:
         // workflowIdReusePolicy, workflowRunTimeout, workflowExecutionTimeout
@@ -42,8 +42,8 @@ namespace Temporal.Common.WorkflowConfiguration
     public class WorkflowExecutionConfiguration : IWorkflowExecutionConfiguration
     {
         public int WorkflowTaskTimeoutMillisec { get; set; }
-        public string TaskQueueMoniker { get; set; }
+        public string TaskQueue { get; set; }
         public WorkflowExecutionConfiguration() { }
-        public WorkflowExecutionConfiguration(string taskQueueMoniker) { TaskQueueMoniker = taskQueueMoniker; }
+        public WorkflowExecutionConfiguration(string taskQueue) { TaskQueue = taskQueue; }
     }
 }
