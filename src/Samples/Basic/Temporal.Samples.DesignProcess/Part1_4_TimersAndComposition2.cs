@@ -23,21 +23,21 @@ namespace Temporal.Sdk.BasicSamples
             private TaskCompletionSource<bool> _requestAbort = new TaskCompletionSource<bool>();
             private TaskCompletionSource<DateTime> _updateTarget = new TaskCompletionSource<DateTime>();
 
-            public async Task<CountdownResult> CountdownAsync(TargetTimePayload target, WorkflowContext workflowCtx)
+            public async Task<CountdownResult> CountdownAsync(TargetTimePayload target, IWorkflowContext workflowCtx)
             {
                 _targetTimeUtc = target.UtcDateTime;
 
-                // Create a CancellationTokenSource that is linked to the WorkflowContext.
-                // If the workflow is cancelled then this source will also be cancelled.
+                // Create a CancellationTokenSource that is linked to the IWorkflowContext.
+                // If the workflow is canceled then this source will also be canceled.
                 CancellationTokenSource targetTimerCancelControl = workflowCtx.DeterministicApi.CreateNewCancellationTokenSource();
 
                 // Set up a timer for the target time.
-                Task targetTask = workflowCtx.Orchestrator.SleepUntilAsync(_targetTimeUtc, targetTimerCancelControl.Token);
+                Task targetTask = workflowCtx.SleepUntilAsync(_targetTimeUtc, targetTimerCancelControl.Token);
 
                 while (true)
                 {
                     // Set up a target timer for one countdown step.
-                    Task stepTask = workflowCtx.Orchestrator.SleepAsync(CountdownStep);
+                    Task stepTask = workflowCtx.SleepAsync(CountdownStep);
 
                     // Wait until any of the timers fire or until any of the signals are received.
                     await Task.WhenAny(targetTask, stepTask, _requestAbort.Task, _updateTarget.Task);
@@ -45,7 +45,7 @@ namespace Temporal.Sdk.BasicSamples
                     if (targetTask.IsCompleted)
                     {
                         // If the target time is reached, use an activity to notify and then complete the workflow.
-                        await workflowCtx.Orchestrator.Activities.ExecuteAsync(RemoteApiNames.Activities.DisplayCompletion);
+                        await workflowCtx.Activities.ExecuteAsync(RemoteApiNames.Activities.DisplayCompletion);
                         return new CountdownResult(true);
                     }
 
@@ -67,7 +67,7 @@ namespace Temporal.Sdk.BasicSamples
                         // so that the Workflow History is updated with the Command to invoke the Activity.
                         // For that to happen we yield to the underlying message loop.
                         // The workflow is immediately ready for continuation and will be resumed using a new Workflow Task shortly.
-                        _ = workflowCtx.Orchestrator.Activities.ExecuteAsync(RemoteApiNames.Activities.DisplayRemainingSteps, remainingSteps);
+                        _ = workflowCtx.Activities.ExecuteAsync(RemoteApiNames.Activities.DisplayRemainingSteps, remainingSteps);
                         await Task.Yield();
                     }
 
@@ -81,7 +81,7 @@ namespace Temporal.Sdk.BasicSamples
                         // Set up a new target timer with a new cancel control.
                         _targetTimeUtc = await _updateTarget.Task;
                         targetTimerCancelControl = workflowCtx.DeterministicApi.CreateNewCancellationTokenSource();
-                        targetTask = workflowCtx.Orchestrator.SleepUntilAsync(_targetTimeUtc, targetTimerCancelControl.Token);
+                        targetTask = workflowCtx.SleepUntilAsync(_targetTimeUtc, targetTimerCancelControl.Token);
 
                         // Reset the signal notification task.
                         _updateTarget = new TaskCompletionSource<DateTime>();

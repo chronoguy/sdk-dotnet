@@ -18,13 +18,13 @@ namespace Temporal.Worker.Workflows.Dynamic
                 where TInput : IDataValue
                 where TResult : IDataValue
     {
-        public sealed override async Task<PayloadsCollection> RunAsync(WorkflowContext workflowCtx)
+        public sealed override async Task<PayloadsCollection> RunAsync(IWorkflowContext workflowCtx)
         {
             TInput input = (typeof(TInput) == typeof(IDataValue.Void))
                     ? (TInput) (IDataValue) IDataValue.Void.Instance
                     : workflowCtx.GetSerializer(workflowCtx.CurrentRun.Input).Deserialize<TInput>(workflowCtx.CurrentRun.Input);
-            
-            DynamicWorkflowContext dynamicCtx = new DynamicWorkflowContext(workflowCtx);
+
+            IDynamicWorkflowContext dynamicCtx = null;  // some wrapper of workflowCtx;
 
             TResult result = await RunAsync(input, dynamicCtx);
 
@@ -35,16 +35,16 @@ namespace Temporal.Worker.Workflows.Dynamic
             return serializedResult;
         }
 
-        public abstract Task<TResult> RunAsync(TInput input, DynamicWorkflowContext workflowCtx);
+        public abstract Task<TResult> RunAsync(TInput input, IDynamicWorkflowContext workflowCtx);
 
-        public sealed override PayloadsCollection HandleQuery(string queryName, PayloadsCollection input, WorkflowContext workflowCtx)
+        public sealed override PayloadsCollection HandleQuery(string queryName, PayloadsCollection input, IWorkflowContext workflowCtx)
         {
             // Handle query as specified by the dynamic workflow APIs. If none of the configured handlers or the default pocily applies,
             // fall back to the base implementation.
             return base.HandleQuery(queryName, input, workflowCtx);            
         }
 
-        public sealed override Task HandleSignalAsync(string signalName, PayloadsCollection input, WorkflowContext workflowCtx)
+        public sealed override Task HandleSignalAsync(string signalName, PayloadsCollection input, IWorkflowContext workflowCtx)
         {
             // Handle signal as specified by the dynamic workflow APIs. If none of the configured handlers or the default pocily applies,
             // fall back to the base implementation.
@@ -54,34 +54,40 @@ namespace Temporal.Worker.Workflows.Dynamic
 
     public abstract class DynamicWorkflowBase : DynamicWorkflowBase<IDataValue.Void, IDataValue.Void>    
     {
-        public sealed override async Task<IDataValue.Void> RunAsync(IDataValue.Void _, DynamicWorkflowContext workflowCtx)
+        public sealed override async Task<IDataValue.Void> RunAsync(IDataValue.Void _, IDynamicWorkflowContext workflowCtx)
         {
             await RunAsync(workflowCtx);
             return null;
         }
 
-        public abstract Task RunAsync(DynamicWorkflowContext workflowCtx);
+        public abstract Task RunAsync(IDynamicWorkflowContext workflowCtx);
     }
 
 
     public abstract class DynamicWorkflowBase<TResult>: DynamicWorkflowBase<IDataValue.Void, TResult>
                 where TResult : IDataValue
     {
-        public sealed override async Task<TResult> RunAsync(IDataValue.Void _, DynamicWorkflowContext workflowCtx)
+        public sealed override async Task<TResult> RunAsync(IDataValue.Void _, IDynamicWorkflowContext workflowCtx)
         {
             TResult result = await RunAsync(workflowCtx); // no await required, but using for consistency with non-generic DynamicWorkflowBase.
             return result;
         }
         
-        public abstract Task<TResult> RunAsync(DynamicWorkflowContext workflowCtx);
+        public abstract Task<TResult> RunAsync(IDynamicWorkflowContext workflowCtx);
     }
 
     // ---
 
-    public class DynamicWorkflowContext : WorkflowContext
+    public interface IDynamicWorkflowContext : IWorkflowContext
+    {        
+        IDynamicWorkflowController DynamicControl { get; }
+    }
+
+    public static class WorkflowContextExtensions
     {
-        internal DynamicWorkflowContext(WorkflowContext baseContext) { }
-        public IDynamicWorkflowController DynamicControl { get; }
+        public static bool CanCastAsDynamic(this IWorkflowContext workflowCtx) { return false; }
+        public static bool TryCastAsDynamic(this IWorkflowContext workflowCtx, out IDynamicWorkflowContext dynamicWorkflowCtx) { dynamicWorkflowCtx = null; return false; }
+        public static IDynamicWorkflowContext CastAsDynamic(this IWorkflowContext workflowCtx) { return null; }
     }
 
     /// <summary>SignalHandlers are specified as a triple (priority, matcherRegex, handlerDelegate).
@@ -89,19 +95,19 @@ namespace Temporal.Worker.Workflows.Dynamic
     /// When a signal with a name 'SignalName' is received, we evaluate all respective triples in the order of priority, until
     /// SignalName is completely matched by the respective matcherRegex. Then the handlerDelegate is invoked to process the 
     /// signal.
-    /// If no matcherRegex matches the received SignalName, we exaluate whether the current DefaultSignalHandlerPolicy applies.
+    /// If no matcherRegex matches the received SignalName, we evaluate whether the current DefaultSignalHandlerPolicy applies.
     /// Such policy usually comes with its own matcherRegex and applies to all signals that are not matched by any handlers,
-    /// but are matched by the policy's matcherRegex. It may spacify catch-all behaviours such as "cache the signal an process
+    /// but are matched by the policy's matcherRegex. It may specify catch-all behaviors such as "cache the signal an process
     /// it if and when a matching signal handler is configures", "ignore the signal" or other
     /// (<see cref="DefaultSignalHandlerPolicy"/>).
     /// If SignalName is not matched by the default policy's matcherRegex, the policy does not apply.
-    /// In that case, the signal will fall through to the hardcoded fafault provided by
+    /// In that case, the signal will fall through to the hard-coded default provided by
     /// <see cref="BasicWorkflowBase.HandleSignalAsync(String, PayloadsCollection, WorkflowContext)"/>.
     /// This will likely be ignoring the signal logging an error.</summary>
     public interface IDynamicWorkflowController
     {
-        IHandlerCollection<Func<string, IDataValue, DynamicWorkflowContext, Task>> SignalHandlers { get; }
-        IHandlerCollection<Func<string, IDataValue, DynamicWorkflowContext, IDataValue>> QueryHandlers { get; }
+        IHandlerCollection<Func<string, IDataValue, IWorkflowContext, Task>> SignalHandlers { get; }
+        IHandlerCollection<Func<string, IDataValue, IWorkflowContext, IDataValue>> QueryHandlers { get; }
 
         SignalHandlingOrderPolicy SignalHandlingOrderPolicy { get; set; }
 
@@ -173,7 +179,7 @@ namespace Temporal.Worker.Workflows.Dynamic
     public class SignalHandlerDefaultPolicy
     {
         public static SignalHandlerDefaultPolicy CacheAndProcessWhenHandlerIsSet(string matcherRegex) { return null; }
-        public static SignalHandlerDefaultPolicy CustomHandler(string matcherRegex, Func<string, IDataValue, DynamicWorkflowContext, Task> handler) { return null; }
+        public static SignalHandlerDefaultPolicy CustomHandler(string matcherRegex, Func<string, IDataValue, IWorkflowContext, Task> handler) { return null; }
         public static SignalHandlerDefaultPolicy Ignore(string matcherRegex) { return null; }
         public static SignalHandlerDefaultPolicy None() { return null; }
 
@@ -187,7 +193,7 @@ namespace Temporal.Worker.Workflows.Dynamic
     public class QueryHandlerDefaultPolicy
     {
         public static QueryHandlerDefaultPolicy ConstantResultValue(string matcherRegex, IDataValue resultValue) { return null; }
-        public static QueryHandlerDefaultPolicy CustomHandler(string matcherRegex, Func<string, IDataValue, DynamicWorkflowContext, IDataValue> handler) { return null; }
+        public static QueryHandlerDefaultPolicy CustomHandler(string matcherRegex, Func<string, IDataValue, IWorkflowContext, IDataValue> handler) { return null; }
         public static QueryHandlerDefaultPolicy CustomError(string matcherRegex, Func<string, IDataValue, Exception> errorFactory) { return null; }
         public static QueryHandlerDefaultPolicy None() { return null; }
 
@@ -198,37 +204,37 @@ namespace Temporal.Worker.Workflows.Dynamic
 
     public static class SignalHandler
     {
-        public static Func<string, IDataValue, DynamicWorkflowContext, Task> Create(Action handler)
+        public static Func<string, IDataValue, IWorkflowContext, Task> Create(Action handler)
         {
             return (_, _, _) => Adapter(handler);
         }
 
-        public static Func<string, IDataValue, DynamicWorkflowContext, Task> Create(Action<string> handler)
+        public static Func<string, IDataValue, IWorkflowContext, Task> Create(Action<string> handler)
         {
             return (signalName, _, _) => Adapter(handler, signalName);
         }
 
-        public static Func<string, IDataValue, DynamicWorkflowContext, Task> Create<TInput>(Action<string, TInput> handler) where TInput : IDataValue
+        public static Func<string, IDataValue, IWorkflowContext, Task> Create<TInput>(Action<string, TInput> handler) where TInput : IDataValue
         {
             return null;
         }
 
-        public static Func<string, IDataValue, DynamicWorkflowContext, Task> Create(Func<Task> handler)
+        public static Func<string, IDataValue, IWorkflowContext, Task> Create(Func<Task> handler)
         {
             return (_, _, _) => Adapter(handler);
         }
 
-        public static Func<string, IDataValue, DynamicWorkflowContext, Task> Create(Func<string, Task> handler)
+        public static Func<string, IDataValue, IWorkflowContext, Task> Create(Func<string, Task> handler)
         {
             return (signalName, _, _) => Adapter(handler, signalName);
         }
 
-        public static Func<string, IDataValue, DynamicWorkflowContext, Task> Create<TInput>(Func<string, TInput, Task> handler) where TInput : IDataValue
+        public static Func<string, IDataValue, IWorkflowContext, Task> Create<TInput>(Func<string, TInput, Task> handler) where TInput : IDataValue
         {
             return null;
         }
 
-        public static Func<string, IDataValue, DynamicWorkflowContext, Task> Create<TInput>(Func<string, TInput, DynamicWorkflowContext, Task> handler) where TInput : IDataValue
+        public static Func<string, IDataValue, IWorkflowContext, Task> Create<TInput>(Func<string, TInput, IWorkflowContext, Task> handler) where TInput : IDataValue
         {
             return null;
         }
@@ -258,24 +264,24 @@ namespace Temporal.Worker.Workflows.Dynamic
 
     public static class QueryHandler
     {
-        public static Func<string, IDataValue, DynamicWorkflowContext, IDataValue> Create<TResult>(Func<TResult> handler) where TResult : IDataValue
+        public static Func<string, IDataValue, IWorkflowContext, IDataValue> Create<TResult>(Func<TResult> handler) where TResult : IDataValue
         {
             return (_, _, _) => Adapter(handler);
         }
 
-        public static Func<string, IDataValue, DynamicWorkflowContext, IDataValue> Create<TResult>(Func<string, TResult> handler) where TResult : IDataValue
+        public static Func<string, IDataValue, IWorkflowContext, IDataValue> Create<TResult>(Func<string, TResult> handler) where TResult : IDataValue
         {
             return (queryName, _, _) => Adapter(handler, queryName);
         }
 
-        public static Func<string, IDataValue, DynamicWorkflowContext, IDataValue> Create<TInput, TResult>(Func<string, TInput, TResult> handler)
+        public static Func<string, IDataValue, IWorkflowContext, IDataValue> Create<TInput, TResult>(Func<string, TInput, TResult> handler)
                     where TInput : IDataValue
                     where TResult : IDataValue
         {
             return null;
         }
 
-        public static Func<string, IDataValue, DynamicWorkflowContext, IDataValue> Create<TInput, TResult>(Func<string, TInput, DynamicWorkflowContext, TResult> handler)
+        public static Func<string, IDataValue, IWorkflowContext, IDataValue> Create<TInput, TResult>(Func<string, TInput, IWorkflowContext, TResult> handler)
                     where TInput : IDataValue
                     where TResult : IDataValue
         {

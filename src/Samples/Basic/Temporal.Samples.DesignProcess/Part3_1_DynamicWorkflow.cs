@@ -10,6 +10,7 @@ using Temporal.Common.DataModel;
 using Temporal.Worker.Hosting;
 using Temporal.Worker.Activities;
 using Temporal.Worker.Workflows.Dynamic;
+using Temporal.Worker.Workflows;
 
 namespace Temporal.Sdk.BasicSamples
 {
@@ -32,7 +33,7 @@ namespace Temporal.Sdk.BasicSamples
             }
 
             public string CommandNamespace { get; set; }    // Required prefix for all valid commands (e.g. "myWf" -> "myWfQuit" is a valid exit command).
-            public string ExitCommand { get; set; }         // Command to fisnih the forkflow (e.g. "Quit").
+            public string ExitCommand { get; set; }         // Command to finish the workflow (e.g. "Quit").
             public string TransitionCommand { get; set; }   // Required prefix for valid transition commands (e.g. "Move" -> "myWfMoveFoo" = transition to state "Foo").
             public string InitState { get; set; }           // Name of the initial state.
             public State[] States { get; set; }             // States
@@ -68,16 +69,16 @@ namespace Temporal.Sdk.BasicSamples
             private bool _isExitRequested = false;
             private TaskCompletionSource<string> _signalHandled = null;
 
-            public override async Task RunAsync(DynamicWorkflowContext workflowCtx)
+            public override async Task RunAsync(IDynamicWorkflowContext workflowCtx)
             {
                 // Any signal arriving while we are setting up will be cached and processed later:
                 workflowCtx.DynamicControl.SignalHandlerDefaultPolicy = SignalHandlerDefaultPolicy.CacheAndProcessWhenHandlerIsSet(".*");
 
-                // Make shure to process the signals in the order they arrive:
+                // Make sure to process the signals in the order they arrive:
                 workflowCtx.DynamicControl.SignalHandlingOrderPolicy = SignalHandlingOrderPolicy.Strict();
 
                 // Load the custom workflow definition from a hypothetical storage:
-                CustomWorkflowDefinition customWf = await workflowCtx.Orchestrator.Activities.ExecuteAsync<CustomWorkflowDefinition>("LoadCustomWorkflowDefinition");
+                CustomWorkflowDefinition customWf = await workflowCtx.Activities.ExecuteAsync<CustomWorkflowDefinition>("LoadCustomWorkflowDefinition");
                
                 // Calculate the regex pattern for valid state transition signals (valid state names contain letters, numbers and underscores):
                 _transitionPrefix = $"{customWf.CommandNamespace}{customWf.TransitionCommand}";                
@@ -121,15 +122,15 @@ namespace Temporal.Sdk.BasicSamples
                         }
                     }
 
-                    // Reset the signal for when a signal is handeled:
+                    // Reset the signal for when a signal is handled:
                     _signalHandled = new TaskCompletionSource<string>();
 
                     // We have now configured the workflow to handle signals expected for the current state.
 
-                    // Now process the current state usiong a hypothetical activity:
+                    // Now process the current state using a hypothetical activity:
 
                     var stateData = new NotifyWorkflowStateEnteredData(currentCustomWfState);
-                    await workflowCtx.Orchestrator.Activities.ExecuteAsync("NotifyWorkflowStateEntered", stateData);
+                    await workflowCtx.Activities.ExecuteAsync("NotifyWorkflowStateEntered", stateData);
 
                     // Now wait for the next signal:
 
@@ -137,9 +138,9 @@ namespace Temporal.Sdk.BasicSamples
                 }
             }
 
-            private void ClearTransitionHandlers(DynamicWorkflowContext workflowCtx)
+            private void ClearTransitionHandlers(IDynamicWorkflowContext workflowCtx)
             {
-                IHandlerCollection<Func<string, IDataValue, DynamicWorkflowContext, Task>> handlers = workflowCtx.DynamicControl.SignalHandlers;
+                IHandlerCollection<Func<string, IDataValue, IWorkflowContext, Task>> handlers = workflowCtx.DynamicControl.SignalHandlers;
                 int i = handlers.Count - 1;
                 while (i >= 0)
                 {

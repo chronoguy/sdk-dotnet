@@ -21,7 +21,7 @@ namespace Temporal.Sdk.BasicSamples
 
             private TaskCompletionSource<string> _setAddresseeName = new TaskCompletionSource<string>();
             
-            public async Task SpeakUntilCancelledAsync(SpeechRequest greetingUtterance, WorkflowContext workflowCtx)
+            public async Task SpeakUntilCancelledAsync(SpeechRequest greetingUtterance, IWorkflowContext workflowCtx)
             {
                 try
                 {
@@ -30,7 +30,7 @@ namespace Temporal.Sdk.BasicSamples
                         string addresseeName = await GetAddresseeNameAsync();
 
                         var greeting = new SpeechRequest($"{greetingUtterance.Text ?? "Hello"}, {addresseeName ?? AddresseeNameDefault}.");
-                        await workflowCtx.Orchestrator.Activities.ExecuteAsync(RemoteApiNames.Activities.SpeakGreeting, greeting);
+                        await workflowCtx.Activities.ExecuteAsync(RemoteApiNames.Activities.SpeakGreeting, greeting);
                     }
                 }
                 catch(TaskCanceledException tcEx)
@@ -43,7 +43,7 @@ namespace Temporal.Sdk.BasicSamples
                     ExceptionDispatchInfo.Capture(tcEx).Throw();
                 }
 
-                workflowCtx.Orchestrator.ConfigureContinueAsNew(startNewRunAfterReturn: true, greetingUtterance);
+                workflowCtx.ConfigureContinueAsNew(startNewRunAfterReturn: true, greetingUtterance);
             }
 
             private async Task<string> GetAddresseeNameAsync()

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Temporal.Common.WorkflowConfiguration;
 using Temporal.Common.DataModel;
 using Temporal.Serialization;
+using Temporal.Worker.Workflows.Dynamic;
 
 namespace Temporal.Worker.Workflows
 {
@@ -14,14 +15,42 @@ namespace Temporal.Worker.Workflows
 
     // ----------- -----------
 
-    public class WorkflowContext
+    public interface IWorkflowContext
     {        
+        IWorkflowExecutionConfiguration WorkflowExecutionConfig { get; }
+        IWorkflowImplementationConfiguration WorkflowImplementationConfig { get; }
+        WorkflowRunContext CurrentRun { get; }
+        WorkflowPreviousRunContext  LastRun { get; }
+        IDeterministicApi DeterministicApi { get; }
+
+        IActivityOrchestrationService Activities { get; }
+        void ConfigureContinueAsNew(bool startNewRunAfterReturn, IDataValue newRunInput);
+        void ConfigureContinueAsNew(bool startNewRunAfterReturn);
+        Task SleepAsync(TimeSpan timeSpan);
+        Task<bool> SleepAsync(TimeSpan timeSpan, CancellationToken cancelToken);
+        Task SleepUntilAsync(DateTime sleepEndUtc);
+        Task<bool> SleepUntilAsync(DateTime sleepEndUtc, CancellationToken cancelToken);
+
+        IPayloadSerializer GetSerializer(PayloadsCollection payloads);
+    }
+
+    internal class WorkflowContext : IWorkflowContext, IDynamicWorkflowContext
+    {
         public IWorkflowExecutionConfiguration WorkflowExecutionConfig { get; }
         public IWorkflowImplementationConfiguration WorkflowImplementationConfig { get; }
-        public IOrchestrationService Orchestrator { get; }
         public WorkflowRunContext CurrentRun { get; }
-        public WorkflowPreviousRunContext  LastRun { get; }
-        public IDeterministicApi DeterministicApi { get; set; }
+        public WorkflowPreviousRunContext LastRun { get; }
+        public IDeterministicApi DeterministicApi { get; }
+
+        public IDynamicWorkflowController DynamicControl { get; }
+
+        public IActivityOrchestrationService Activities { get; }
+        public void ConfigureContinueAsNew(bool startNewRunAfterReturn, IDataValue newRunInput) { }
+        public void ConfigureContinueAsNew(bool startNewRunAfterReturn) { }
+        public Task SleepAsync(TimeSpan timeSpan) { return null; }
+        public Task<bool> SleepAsync(TimeSpan timeSpan, CancellationToken cancelToken) { return null; }
+        public Task SleepUntilAsync(DateTime sleepEndUtc) { return null; }
+        public Task<bool> SleepUntilAsync(DateTime sleepEndUtc, CancellationToken cancelToken) { return null; }
 
         /// <summary>Get the serializer for the specified payload.
         /// If metadata specifies an available serializer - get that one;
@@ -31,28 +60,6 @@ namespace Temporal.Worker.Workflows
     }
 
     // ----------- -----------
-
-    public interface IOrchestrationService
-    {
-        IActivityOrchestrationService Activities { get; }
-        void ConfigureContinueAsNew(bool startNewRunAfterReturn, IDataValue newRunInput);
-        void ConfigureContinueAsNew(bool startNewRunAfterReturn);
-        Task SleepAsync(TimeSpan timeSpan);
-        Task<bool> SleepAsync(TimeSpan timeSpan, CancellationToken cancelToken);
-        Task SleepUntilAsync(DateTime sleepEndUtc);
-        Task<bool> SleepUntilAsync(DateTime sleepEndUtc, CancellationToken cancelToken);
-    }
-
-    public sealed class OrchestrationService : IOrchestrationService
-    {        
-        public IActivityOrchestrationService Activities { get; }
-        public void ConfigureContinueAsNew(bool startNewRunAfterReturn, IDataValue newRunInput) { }
-        public void ConfigureContinueAsNew(bool startNewRunAfterReturn) { }
-        public Task SleepAsync(TimeSpan timeSpan) { return null; }
-        public Task<bool> SleepAsync(TimeSpan timeSpan, CancellationToken cancelToken) { return null; }
-        public Task SleepUntilAsync(DateTime sleepEndUtc) { return null; }
-        public Task<bool> SleepUntilAsync(DateTime sleepEndUtc, CancellationToken cancelToken) { return null; }
-    }
 
     public interface IActivityOrchestrationService
     {
@@ -94,7 +101,7 @@ namespace Temporal.Worker.Workflows
         CancellationTokenSource CreateNewCancellationTokenSource(TimeSpan delay);
     }
 
-    public class DeterministicApi : IDeterministicApi
+    internal class DeterministicApi : IDeterministicApi
     {
         public DateTime DateTimeUtcNow { get; }
 
@@ -191,14 +198,14 @@ namespace Temporal.Worker.Workflows
     /// 'RunMethod' must be the name of the method that implements them main workflow Run method.
     /// Such method must have one of the following signatures ("RunAsync" is a placeholder for any method name):
     ///     Task RunAsync()
-    ///     Task RunAsync(WorkflowContext)
-    ///     Task RunAsync(TArg, WorkflowContext) where TArg : IDataValue
+    ///     Task RunAsync(IWorkflowContext)
+    ///     Task RunAsync(TArg, IWorkflowContext) where TArg : IDataValue
     ///     Task{TResult} RunAsync() where TResult : IDataValue
-    ///     Task{TResult} RunAsync(WorkflowContext) where TResult : IDataValue
-    ///     Task{TResult} RunAsync(TArg, WorkflowContext) where TResult : IDataValue where TArg : IDataValue
+    ///     Task{TResult} RunAsync(IWorkflowContext) where TResult : IDataValue
+    ///     Task{TResult} RunAsync(TArg, IWorkflowContext) where TResult : IDataValue where TArg : IDataValue
     ///     Task{PayloadsCollection} RunAsync()
-    ///     Task{PayloadsCollection} RunAsync(WorkflowContext)
-    ///     Task{PayloadsCollection} RunAsync(TArg, WorkflowContext) where TArg : IDataValue    
+    ///     Task{PayloadsCollection} RunAsync(IWorkflowContext)
+    ///     Task{PayloadsCollection} RunAsync(TArg, IWorkflowContext) where TArg : IDataValue    
     /// otherwise an error during worker initialization is generated.
     /// 
     /// If the method named by 'RunMethod' property is overloaded, the property must unambiguously specify a particular overload
@@ -258,13 +265,13 @@ namespace Temporal.Worker.Workflows
     /// 
     /// The method signature must me one of the following:
     ///     Task HandlerMethod()
-    ///     Task HandlerMethod(WorkflowContext workflowCtx)
-    ///     Task HandlerMethod(TArg handlerArgs, WorkflowContext workflowCtx) where TArg : IDataValue
-    ///     Task HandlerMethod(PayloadsCollection handlerArgs, WorkflowContext workflowCtx) : IDataValue
+    ///     Task HandlerMethod(IWorkflowContext workflowCtx)
+    ///     Task HandlerMethod(TArg handlerArgs, IWorkflowContext workflowCtx) where TArg : IDataValue
+    ///     Task HandlerMethod(PayloadsCollection handlerArgs, IWorkflowContext workflowCtx) : IDataValue
     ///     void HandlerMethod()
-    ///     void HandlerMethod(WorkflowContext workflowCtx)
-    ///     void HandlerMethod(TArg handlerArgs, WorkflowContext workflowCtx) where TArg : IDataValue
-    ///     void HandlerMethod(PayloadsCollection handlerArgs, WorkflowContext workflowCtx) : IDataValue
+    ///     void HandlerMethod(IWorkflowContext workflowCtx)
+    ///     void HandlerMethod(TArg handlerArgs, IWorkflowContext workflowCtx) where TArg : IDataValue
+    ///     void HandlerMethod(PayloadsCollection handlerArgs, IWorkflowContext workflowCtx) : IDataValue
     /// otherwise an error during worker initialization is generated.
     /// 
     /// Stub attributes are ignores for all purposes other than validation.
@@ -292,9 +299,9 @@ namespace Temporal.Worker.Workflows
     /// 
     /// The method signature must me one of the following:
     ///     TResult HandlerMethod() where TResult : IDataValue
-    ///     TResult HandlerMethod(WorkflowContext workflowCtx) where TResult : IDataValue
-    ///     TResult HandlerMethod(TArg handlerArgs, WorkflowContext workflowCtx) where TResult : IDataValue where TArg : IDataValue   
-    ///     PayloadsCollection HandlerMethod(PayloadsCollection handlerArgs, WorkflowContext workflowCtx) : IDataValue
+    ///     TResult HandlerMethod(IWorkflowContext workflowCtx) where TResult : IDataValue
+    ///     TResult HandlerMethod(TArg handlerArgs, IWorkflowContext workflowCtx) where TResult : IDataValue where TArg : IDataValue   
+    ///     PayloadsCollection HandlerMethod(PayloadsCollection handlerArgs, IWorkflowContext workflowCtx) : IDataValue
     /// otherwise an error during worker initialization is generated.
     /// 
     /// Stub attributes are ignores for all purposes other than validation.

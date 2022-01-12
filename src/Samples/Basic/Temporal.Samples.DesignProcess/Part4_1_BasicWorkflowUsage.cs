@@ -30,17 +30,17 @@ namespace Temporal.Sdk.BasicSamples
 
             private string _addresseeName = null;
 
-            public override async Task<PayloadsCollection> RunAsync(WorkflowContext workflowCtx)
+            public override async Task<PayloadsCollection> RunAsync(IWorkflowContext workflowCtx)
             {
                 string greeting = $"Hello, {_addresseeName ?? AddresseeNameDefault}.";
 
                 PayloadsCollection greetingPayload = workflowCtx.WorkflowImplementationConfig.DefaultPayloadSerializer.Serialize(greeting);
-                await workflowCtx.Orchestrator.Activities.ExecuteAsync("SpeakAGreeting", greetingPayload);
+                await workflowCtx.Activities.ExecuteAsync("SpeakAGreeting", greetingPayload);
 
                 return PayloadsCollection.Empty;
             }
 
-            public override Task HandleSignalAsync(string signalName, PayloadsCollection input, WorkflowContext workflowCtx)
+            public override Task HandleSignalAsync(string signalName, PayloadsCollection input, IWorkflowContext workflowCtx)
             {
                 if (signalName.Equals("SetAddressee", StringComparison.OrdinalIgnoreCase))
                 {                    

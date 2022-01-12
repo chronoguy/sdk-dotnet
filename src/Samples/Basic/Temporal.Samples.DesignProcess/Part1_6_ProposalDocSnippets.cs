@@ -17,11 +17,11 @@ namespace Temporal.Sdk.BasicSamples
         {
             private bool _isConditionMet = false;
 
-            public Task MainAsync(WorkflowContext workflowCtx)
+            public Task MainAsync(IWorkflowContext workflowCtx)
             {
                 while (! _isConditionMet)
                 {
-                    Task someActivity = workflowCtx.Orchestrator.Activities.ExecuteAsync("SomeActivity");
+                    Task someActivity = workflowCtx.Activities.ExecuteAsync("SomeActivity");
                     //PerformSome
                 }
 

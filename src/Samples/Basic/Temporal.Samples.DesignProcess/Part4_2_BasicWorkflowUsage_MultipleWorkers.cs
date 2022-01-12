@@ -19,7 +19,7 @@ namespace Temporal.Sdk.BasicSamples
     {
         public class SayHelloWorkflow : BasicWorkflowBase
         {            
-            public override async Task<PayloadsCollection> RunAsync(WorkflowContext workflowCtx)
+            public override async Task<PayloadsCollection> RunAsync(IWorkflowContext workflowCtx)
             {
                 PayloadsCollection input = workflowCtx.CurrentRun.Input;
                 string addresseeName = workflowCtx.GetSerializer(input).Deserialize<string>(input);
@@ -30,10 +30,10 @@ namespace Temporal.Sdk.BasicSamples
                 return PayloadsCollection.Empty;
             }
 
-            private async Task SpeakGreetingAsync(string text, WorkflowContext workflowCtx)
+            private async Task SpeakGreetingAsync(string text, IWorkflowContext workflowCtx)
             {
                 PayloadsCollection greetingPayload = workflowCtx.WorkflowImplementationConfig.DefaultPayloadSerializer.Serialize(text);
-                await workflowCtx.Orchestrator.Activities.ExecuteAsync("SpeakAGreeting1", greetingPayload);
+                await workflowCtx.Activities.ExecuteAsync("SpeakAGreeting1", greetingPayload);
             }
         }
 
@@ -52,7 +52,7 @@ namespace Temporal.Sdk.BasicSamples
 
         public class SayGoodByeWorkflow : BasicWorkflowBase
         {
-            public override async Task<PayloadsCollection> RunAsync(WorkflowContext workflowCtx)
+            public override async Task<PayloadsCollection> RunAsync(IWorkflowContext workflowCtx)
             {
                 PayloadsCollection input = workflowCtx.CurrentRun.Input;
                 string addresseeName = workflowCtx.GetSerializer(input).Deserialize<string>(input);
@@ -63,21 +63,21 @@ namespace Temporal.Sdk.BasicSamples
                 return PayloadsCollection.Empty;
             }
 
-            private async Task SpeakGreetingAsync(string text, WorkflowContext workflowCtx)
+            private async Task SpeakGreetingAsync(string text, IWorkflowContext workflowCtx)
             {
-                await workflowCtx.Orchestrator.Activities.ExecuteAsync("SpeakAGreeting2", new SpeechRequest(text));
+                await workflowCtx.Activities.ExecuteAsync("SpeakAGreeting2", new SpeechRequest(text));
             }
         }
 
         public class SayGreetingWorkflow : BasicWorkflowBase
         {
-            public override async Task<PayloadsCollection> RunAsync(WorkflowContext workflowCtx)
+            public override async Task<PayloadsCollection> RunAsync(IWorkflowContext workflowCtx)
             {
                 PayloadsCollection input = workflowCtx.CurrentRun.Input;
                 string greeting = workflowCtx.GetSerializer(input).Deserialize<string>(input);
                 greeting ??= "<null>";
 
-                await workflowCtx.Orchestrator.Activities.ExecuteAsync("SpeakAGreeting2", new SpeechRequest(greeting));
+                await workflowCtx.Activities.ExecuteAsync("SpeakAGreeting2", new SpeechRequest(greeting));
 
                 return PayloadsCollection.Empty;
             }

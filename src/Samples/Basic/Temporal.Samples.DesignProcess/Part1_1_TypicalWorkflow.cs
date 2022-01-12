@@ -19,14 +19,14 @@ namespace Temporal.Sdk.BasicSamples
 
             private string _addresseeName = null;
 
-            public async Task SayHelloAsync(WorkflowContext workflowCtx)
+            public async Task SayHelloAsync(IWorkflowContext workflowCtx)
             {
                 var greeting = new SpeechRequest($"Hello, {_addresseeName ?? AddresseeNameDefault}.");                
-                await workflowCtx.Orchestrator.Activities.ExecuteAsync("SpeakAGreeting", greeting);
+                await workflowCtx.Activities.ExecuteAsync("SpeakAGreeting", greeting);
             }
 
             [WorkflowSignalHandler]
-            public Task SetAddresseeAsync(SpeechRequest input, WorkflowContext _)
+            public Task SetAddresseeAsync(SpeechRequest input, IWorkflowContext _)
             {
                 _addresseeName = input?.Text;
                 return Task.CompletedTask;                
@@ -62,31 +62,31 @@ namespace Temporal.Sdk.BasicSamples
             }
         }
 
-        public static void Main(string[] args)
-        {
-            // Use the ASP.Net Core host initialization pattern:
-            // 'UseTemporalWorkerHost' will configure all the temporal defaults
-            // and also apply all the file-based application config files.
-            // Configuraton will automatically be persisted via side affects as appropriate before being passed to the workflow implmentation.
-            // (Config files are treated elsewhere.)            
+public static void Main(string[] args)
+{
+    // Use the ASP.Net Core host initialization pattern:
+    // 'UseTemporalWorkerHost' will configure all the temporal defaults
+    // and also apply all the file-based application config files.
+    // Configuraton will automatically be persisted via side affects as appropriate before being passed to the workflow implmentation.
+    // (Config files are treated elsewhere.)            
 
-            IHost appHost = Host.CreateDefaultBuilder(args)
-                    .UseTemporalWorkerHost()
-                    .ConfigureServices(serviceCollection =>
-                    {
-                        serviceCollection.AddTemporalWorker()
-                                .Configure(temporalWorkerConfig =>
-                                {
-                                    temporalWorkerConfig.TaskQueue = "Some Queue";
-                                });
+    IHost appHost = Host.CreateDefaultBuilder(args)
+            .UseTemporalWorkerHost()
+            .ConfigureServices(serviceCollection =>
+            {
+                serviceCollection.AddTemporalWorker()
+                        .Configure(temporalWorkerConfig =>
+                        {
+                            temporalWorkerConfig.TaskQueue = "Some Queue";
+                        });
 
-                        serviceCollection.AddWorkflowWithAttributes<SayHelloWorkflow>();
+                serviceCollection.AddWorkflowWithAttributes<SayHelloWorkflow>();
 
-                        serviceCollection.AddActivity<SpeechRequest>("SpeakAGreeting", Speak.GreetingAsync);
-                    })
-                    .Build();
+                serviceCollection.AddActivity<SpeechRequest>("SpeakAGreeting", Speak.GreetingAsync);
+            })
+            .Build();
 
-            appHost.Run();
-        }
+    appHost.Run();
+}
     }
 }

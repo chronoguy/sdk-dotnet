@@ -152,11 +152,11 @@ namespace Temporal.Sdk.BasicSamples
             {
                 throw new NotSupportedException($"This {nameof(IShoppingCart)} implementation does not support this SignalStub-method."
                                               + $" The supported handler for this signal type"
-                                              + $" is {nameof(ApplyPayment)}({nameof(MoneyAmount)}, {nameof(WorkflowContext)}).");
+                                              + $" is {nameof(ApplyPayment)}({nameof(MoneyAmount)}, {nameof(IWorkflowContext)}).");
             }
 
             [WorkflowSignalHandler(SignalTypeName = RemoteApiNames.ShoppingCartWorkflow.Signals.Pay)]
-            public void ApplyPayment(MoneyAmount amount, WorkflowContext workflowContext)
+            public void ApplyPayment(MoneyAmount amount, IWorkflowContext workflowContext)
             {
                 _appliedPayment = _appliedPayment + amount;
 
@@ -253,7 +253,7 @@ namespace Temporal.Sdk.BasicSamples
             Task<OrderConfirmation> IShoppingCart.ContinueShoppingAsync()
             {
                 throw new NotSupportedException($"This {nameof(IShoppingCart)} implementation does not support this RunMethod-Stub."
-                                              + $" The workflow run method is {nameof(ShopAsync)}({nameof(User)}, {nameof(WorkflowContext)}).");
+                                              + $" The workflow run method is {nameof(ShopAsync)}({nameof(User)}, {nameof(IWorkflowContext)}).");
             }
 
             public async Task<OrderConfirmation> ShopAsync(User shopper)

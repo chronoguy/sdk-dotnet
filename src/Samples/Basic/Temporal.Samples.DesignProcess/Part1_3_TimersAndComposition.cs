@@ -26,12 +26,12 @@ namespace Temporal.Sdk.BasicSamples
 
             private TaskCompletionSource<bool> _requestExit = new TaskCompletionSource<bool>();
 
-            public async Task GreetRegularlyAsync(SpeechRequest nameInfo, WorkflowContext workflowCtx)
+            public async Task GreetRegularlyAsync(SpeechRequest nameInfo, IWorkflowContext workflowCtx)
             {
                 string name = nameInfo?.Text ?? AddresseeNameDefault;
                 Random rnd = workflowCtx.DeterministicApi.CreateNewRandom();
 
-                workflowCtx.Orchestrator.ConfigureContinueAsNew(startNewRunAfterReturn: true, nameInfo);
+                workflowCtx.ConfigureContinueAsNew(startNewRunAfterReturn: true, nameInfo);
 
                 for (int i = 0; i < SingleWorkflowRunIterations; i++)
                 {
@@ -42,7 +42,7 @@ namespace Temporal.Sdk.BasicSamples
                     await SpeakGreetingAsync($"Hello {name}! I will sleep for {delayMillis} milliseconds and then I will greet you again.",
                                              workflowCtx);
 
-                    Task sleepTask = workflowCtx.Orchestrator.SleepAsync(TimeSpan.FromMilliseconds(delayMillis));
+                    Task sleepTask = workflowCtx.SleepAsync(TimeSpan.FromMilliseconds(delayMillis));
                     await Task.WhenAny(_requestExit.Task, sleepTask);
 
                     if (_requestExit.Task.IsCompleted)
@@ -50,15 +50,15 @@ namespace Temporal.Sdk.BasicSamples
                         await SpeakGreetingAsync($"Hello {name}! It was requested to quit the periodic greetings, so this the last one.",
                                                  workflowCtx);
 
-                        workflowCtx.Orchestrator.ConfigureContinueAsNew(startNewRunAfterReturn: false);
-                        return;                        
+                        workflowCtx.ConfigureContinueAsNew(startNewRunAfterReturn: false);
+                        return;
                     }
                 }
             }
             
-            private Task SpeakGreetingAsync(string greetingText, WorkflowContext workflowCtx)
+            private Task SpeakGreetingAsync(string greetingText, IWorkflowContext workflowCtx)
             {
-                return workflowCtx.Orchestrator.Activities.ExecuteAsync(RemoteApiNames.Activities.SpeakGreeting, new SpeechRequest(greetingText));
+                return workflowCtx.Activities.ExecuteAsync(RemoteApiNames.Activities.SpeakGreeting, new SpeechRequest(greetingText));
             }
 
             [WorkflowSignalHandler]
