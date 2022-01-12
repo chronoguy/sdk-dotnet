@@ -13,7 +13,7 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'net462' OR '$(TargetFramework)' == 'netcoreapp3.1'">
     
     <Compile Include="$(MSBuildThisFileDirectory)_Build\IsExternalInit.cs" 
-             Link="$_Build\%(Filename)%(Extension)" />        
+             Link="_Build\%(Filename)%(Extension)" />        
   </ItemGroup>
   
 </Project>
