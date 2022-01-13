@@ -191,7 +191,7 @@ namespace Temporal.Worker.Workflows
     /// <summary>
     /// Specifies that a class is an implementation of a workflow that can be hosted by the worker.
     /// 
-    /// Can only be applied to classes. Ifaces and structs are not permitted.
+    /// Can only be applied to public classes. Ifaces, structs and non-public classes are not permitted.
     /// Inheritance is supported.
     /// If multiple Workflow attributes are present within a class due to inheritance, the most derived wins.
     /// 
@@ -200,15 +200,15 @@ namespace Temporal.Worker.Workflows
     /// 
     /// 'RunMethod' must be the name of the method that implements them main workflow Run method.
     /// Such method must have one of the following signatures ("RunAsync" is a placeholder for any method name):
-    ///     Task RunAsync();
-    ///     Task RunAsync(IWorkflowContext workflowCtx);
-    ///     Task RunAsync(TArg input) where TArg : IDataValue;
-    ///     Task RunAsync(TArg input, IWorkflowContext workflowCtx) where TArg : IDataValue;
-    ///     Task{TResult} RunAsync() where TResult : IDataValue;
-    ///     Task{TResult} RunAsync(IWorkflowContext workflowCtx) where TResult : IDataValue;
-    ///     Task{TResult} RunAsync(TArg input) where TResult : IDataValue where TArg : IDataValue;
-    ///     Task{TResult} RunAsync(TArg input, IWorkflowContext workflowCtx) where TResult : IDataValue where TArg : IDataValue;
-    ///     Task{PayloadsCollection> RunAsync(PayloadsCollection input, IWorkflowContext workflowCtx);
+    ///     public Task RunAsync();
+    ///     public Task RunAsync(IWorkflowContext workflowCtx);
+    ///     public Task RunAsync(TArg input) where TArg : IDataValue;
+    ///     public Task RunAsync(TArg input, IWorkflowContext workflowCtx) where TArg : IDataValue;
+    ///     public Task{TResult} RunAsync() where TResult : IDataValue;
+    ///     public Task{TResult} RunAsync(IWorkflowContext workflowCtx) where TResult : IDataValue;
+    ///     public Task{TResult} RunAsync(TArg input) where TResult : IDataValue where TArg : IDataValue;
+    ///     public Task{TResult} RunAsync(TArg input, IWorkflowContext workflowCtx) where TResult : IDataValue where TArg : IDataValue;
+    ///     public Task{PayloadsCollection> RunAsync(PayloadsCollection input, IWorkflowContext workflowCtx);
     /// otherwise an error during worker initialization is generated.
     /// 
     /// If the method named by 'RunMethod' property is overloaded, the property must unambiguously specify a particular overload
@@ -269,19 +269,20 @@ namespace Temporal.Worker.Workflows
     /// Multiple handlers for the same signal type name are prohibited.
     /// 
     /// The method signature must me one of the following:
-    ///     Task HandlerMethod()
-    ///     Task HandlerMethod(IWorkflowContext workflowCtx)
-    ///     Task HandlerMethod(TArg handlerArgs, IWorkflowContext workflowCtx) where TArg : IDataValue
-    ///     Task HandlerMethod(PayloadsCollection handlerArgs, IWorkflowContext workflowCtx) : IDataValue
-    ///     void HandlerMethod()
-    ///     void HandlerMethod(IWorkflowContext workflowCtx)
-    ///     void HandlerMethod(TArg handlerArgs, IWorkflowContext workflowCtx) where TArg : IDataValue
-    ///     void HandlerMethod(PayloadsCollection handlerArgs, IWorkflowContext workflowCtx) : IDataValue
+    ///     public void HandleSignal();
+    ///     public void HandleSignal(IWorkflowContext workflowCtx);
+    ///     public void HandleSignal(TArg handlerArgs) where TArg : IDataValue;
+    ///     public void HandleSignal(TArg handlerArgs, IWorkflowContext workflowCtx) where TArg : IDataValue;
+    ///     public Task HandleSignalAsync();
+    ///     public Task HandleSignalAsync(IWorkflowContext workflowCtx);
+    ///     public Task HandleSignalAsync(TArg handlerArgs) where TArg : IDataValue;
+    ///     public Task HandleSignalAsync(TArg handlerArgs, IWorkflowContext workflowCtx) where TArg : IDataValue;
+    ///     public Task HandleSignalAsync(PayloadsCollection handlerArgs, IWorkflowContext workflowCtx) where TArg : IDataValue;
     /// otherwise an error during worker initialization is generated.
     /// 
     /// Stub attributes are ignores for all purposes other than validation.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
+    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
     public sealed class WorkflowSignalHandlerAttribute : Attribute
     {
         public string SignalTypeName { get; set; }
