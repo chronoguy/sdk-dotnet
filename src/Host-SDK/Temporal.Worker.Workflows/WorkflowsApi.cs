@@ -200,15 +200,15 @@ namespace Temporal.Worker.Workflows
     /// 
     /// 'RunMethod' must be the name of the method that implements them main workflow Run method.
     /// Such method must have one of the following signatures ("RunAsync" is a placeholder for any method name):
-    ///     Task RunAsync()
-    ///     Task RunAsync(IWorkflowContext)
-    ///     Task RunAsync(TArg, IWorkflowContext) where TArg : IDataValue
-    ///     Task{TResult} RunAsync() where TResult : IDataValue
-    ///     Task{TResult} RunAsync(IWorkflowContext) where TResult : IDataValue
-    ///     Task{TResult} RunAsync(TArg, IWorkflowContext) where TResult : IDataValue where TArg : IDataValue
-    ///     Task{PayloadsCollection} RunAsync()
-    ///     Task{PayloadsCollection} RunAsync(IWorkflowContext)
-    ///     Task{PayloadsCollection} RunAsync(TArg, IWorkflowContext) where TArg : IDataValue    
+    ///     Task RunAsync();
+    ///     Task RunAsync(IWorkflowContext workflowCtx);
+    ///     Task RunAsync(TArg input) where TArg : IDataValue;
+    ///     Task RunAsync(TArg input, IWorkflowContext workflowCtx) where TArg : IDataValue;
+    ///     Task{TResult} RunAsync() where TResult : IDataValue;
+    ///     Task{TResult} RunAsync(IWorkflowContext workflowCtx) where TResult : IDataValue;
+    ///     Task{TResult} RunAsync(TArg input) where TResult : IDataValue where TArg : IDataValue;
+    ///     Task{TResult} RunAsync(TArg input, IWorkflowContext workflowCtx) where TResult : IDataValue where TArg : IDataValue;
+    ///     Task{PayloadsCollection> RunAsync(PayloadsCollection input, IWorkflowContext workflowCtx);
     /// otherwise an error during worker initialization is generated.
     /// 
     /// If the method named by 'RunMethod' property is overloaded, the property must unambiguously specify a particular overload
