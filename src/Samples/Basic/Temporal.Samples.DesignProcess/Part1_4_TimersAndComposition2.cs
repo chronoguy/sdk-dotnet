@@ -52,7 +52,7 @@ namespace Temporal.Sdk.BasicSamples
                     if (_requestAbort.Task.IsCompleted)
                     {
                         // If the workflow is aborted via a signal, quit now.
-                        return new CountdownResult(true);
+                        return new CountdownResult(false);
                     }
 
                     if (stepTask.IsCompleted)

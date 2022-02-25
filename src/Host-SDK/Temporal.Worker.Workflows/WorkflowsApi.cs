@@ -304,10 +304,11 @@ namespace Temporal.Worker.Workflows
     /// Multiple handlers for the same query type name are prohibited.
     /// 
     /// The method signature must me one of the following:
-    ///     TResult HandlerMethod() where TResult : IDataValue
-    ///     TResult HandlerMethod(IWorkflowContext workflowCtx) where TResult : IDataValue
-    ///     TResult HandlerMethod(TArg handlerArgs, IWorkflowContext workflowCtx) where TResult : IDataValue where TArg : IDataValue   
-    ///     PayloadsCollection HandlerMethod(PayloadsCollection handlerArgs, IWorkflowContext workflowCtx) : IDataValue
+    ///     public TResult HandleQuery();
+    ///     public TResult HandleQuery(IWorkflowContext workflowCtx) where TArg : IDataValue where TResult : IDataValue;
+    ///     public TResult HandleQuery(TArg queryArgs) where TArg : IDataValue where TResult : IDataValue;
+    ///     public TResult HandleQuery(TArg queryArgs, IWorkflowContext workflowCtx) where TArg : IDataValue where TResult : IDataValue;
+    ///     public PayloadsCollection HandleQuery(PayloadsCollection queryArgs, IWorkflowContext workflowCtx);
     /// otherwise an error during worker initialization is generated.
     /// 
     /// Stub attributes are ignores for all purposes other than validation.

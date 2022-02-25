@@ -134,14 +134,18 @@ namespace Temporal.Sdk.BasicSamples
             {
                 if (await latestRun.IsActiveAsync())
                 {
+                    // The Task returned by this API is completed when the cancellation request call is completed,
+                    // i.e. the server persisted the request to cancel into the workflow history.
+                    // We must await the completion of the workflow to learn when and whether the remote workflow
+                    // honored the cancellation request.
                     await latestRun.RequestCancellationAsync();
                 }
 
-                // Wait for the workflow to finsih and check if it respected the cancellation:
+                // Wait for the workflow to finish and check if it respected the cancellation:
                 WorkflowRunResult result = await latestRun.GetResultAsync();
                 Console.WriteLine("Workflow cancellation "
                                 + (result.IsCancelled ? "was respected" : "was not respected")
-                                + " by the worflow.");
+                                + " by the workflow.");
                 return;
             }
 

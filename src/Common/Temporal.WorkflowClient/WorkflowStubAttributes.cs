@@ -12,7 +12,7 @@ namespace Temporal.WorkflowClient
     ///     Task{TResult} SomeMethod() where TResult : IDataValue
     ///     Task SomeMethod(TArg args) where TArg : IDataValue
     ///     Task{TResult} SomeMethod(TArg args) where TArg : IDataValue where TResult : IDataValue
-    ///     Task{PayloadsCollection} SomeMethod(PayloadsCollection args, CancellationToken cancelToken)
+    ///     Task{PayloadsCollection} SomeMethod(PayloadsCollection args)
     /// otherwise an error during stub generation is thrown.
     /// @ToDo: Cancellation Tokens?
     /// 
@@ -35,7 +35,7 @@ namespace Temporal.WorkflowClient
     /// If, however, starting new run fails based on the 'WorkflowIdReusePolicy', the failure will be propagated and binding
     /// to an existing Finished run will not be attempted.
     /// 
-    /// If CanBindToExistingRun is true, then the RunMethodStub can be called to an active workflow run multiple times.
+    /// If CanBindToExistingRun is true, then the RunMethodStub can be called for an active workflow run multiple times.
     /// In that case the returned Task represents the completion of the active run; the run is not started again.
     /// Potential arguments are ignored in such case.
     /// 
@@ -85,12 +85,12 @@ namespace Temporal.WorkflowClient
     /// 
     /// See <see cref="WorkflowRunMethodStubAttribute" /> for more information on various stub methods and their relation to handler methods.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
-    public sealed class WorkflowSignalStubAttribute : Attribute
-    {
-        public string SignalTypeName { get; set; }
-        public WorkflowSignalStubAttribute() { }
-    }
+[AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
+public sealed class WorkflowSignalStubAttribute : Attribute
+{
+    public string SignalTypeName { get; set; }
+    public WorkflowSignalStubAttribute() { }
+}
 
     /// <summary>
     /// Can be applied to methods with signatures:
@@ -115,10 +115,10 @@ namespace Temporal.WorkflowClient
     /// 
     /// See <see cref="WorkflowRunMethodStubAttribute" /> for more information on various stub methods and their relation to handler methods.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
-    public sealed class WorkflowQueryStubAttribute : Attribute
-    {
-        public string QueryTypeName { get; set; }
-        public WorkflowQueryStubAttribute() { }
-    }
+[AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
+public sealed class WorkflowQueryStubAttribute : Attribute
+{
+    public string QueryTypeName { get; set; }
+    public WorkflowQueryStubAttribute() { }
+}
 }

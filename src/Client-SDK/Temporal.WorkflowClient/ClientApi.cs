@@ -261,17 +261,17 @@ namespace Temporal.WorkflowClient
 
 
         #region GetRunStub<TStub>(..)
-        // A stub returned by these methods can always be cast to 'IWorkflowStub'.
+        // A stub returned by these methods can always be cast to 'IWorkflowRunStub'.
         // Initially, the stub is not bound to any workflow run.
         // It will be bound when a stub run-method API is called.
         // If a workflow run is active AND binding to active runs is permitted, the stub will be bound to that run.
         // If a workflow run is inactive AND binding to new runs is permitted, then a new run will be attempted to start,
-        // and if it succeeds, the stub will be bount to that new run.
+        // and if it succeeds, the stub will be bound to that new run.
         // See docs for 'WorkflowXxxStubAttribute' for more.
         //
         // NOTE: 'TStub' must be an Interface and ANY interface can be specified.
         // It is not required that the workflow implementation hosted in the worker implements this interface:
-        //  - The name of the workflow type is provided by this Workflow clas instance.
+        //  - The name of the workflow type is provided by this Workflow class instance.
         //  - The names of the signals/queries will be deduced from the WorkflowXxxStub attributes.
         //  - Parameters will be sent as specified.
         // Mismatches will result in descriptive runtime errors (e.g. "no such signal handler").
@@ -282,30 +282,30 @@ namespace Temporal.WorkflowClient
         public TStub GetRunStub<TStub>()
         {
             return GetRunStub<TStub>(new WorkflowRunStubConfiguration(canBindToNewRun: false,
-                                                                      canBindToExistingActiveRun: true,
-                                                                      canBindToExistingFinishedRun: true,
-                                                                      mustBindToNewIfContinued: false),
-                                     runConfig: null);
+                                                                        canBindToExistingActiveRun: true,
+                                                                        canBindToExistingFinishedRun: true,
+                                                                        mustBindToNewIfContinued: false),
+                                        runConfig: null);
         }
 
         public TStub GetRunStub<TStub>(string taskQueue)
         {
             return GetRunStub<TStub>(new WorkflowRunStubConfiguration(canBindToNewRun: true,
-                                                                      canBindToExistingActiveRun: true,
-                                                                      canBindToExistingFinishedRun: true,
-                                                                      mustBindToNewIfContinued: false),
-                                     new WorkflowExecutionConfiguration(taskQueue));
+                                                                        canBindToExistingActiveRun: true,
+                                                                        canBindToExistingFinishedRun: true,
+                                                                        mustBindToNewIfContinued: false),
+                                        new WorkflowExecutionConfiguration(taskQueue));
         }
 
         public TStub GetRunStub<TStub>(IWorkflowExecutionConfiguration runConfig)
         {
             return GetRunStub<TStub>(new WorkflowRunStubConfiguration(canBindToNewRun: true,
-                                                                      canBindToExistingActiveRun: true,
-                                                                      canBindToExistingFinishedRun: true,
-                                                                      mustBindToNewIfContinued: false),
-                                     runConfig);
+                                                                        canBindToExistingActiveRun: true,
+                                                                        canBindToExistingFinishedRun: true,
+                                                                        mustBindToNewIfContinued: false),
+                                        runConfig);
         }
-        
+    
         public TStub GetRunStub<TStub>(WorkflowRunStubConfiguration stubConfig, IWorkflowExecutionConfiguration runConfig) { return default(TStub); }
         #endregion GetRunStub<TStub>(..)
     }
@@ -432,25 +432,25 @@ namespace Temporal.WorkflowClient
 
     // ----------- -----------
     
-    public sealed class WorkflowRunStubConfiguration
-    {
-        public bool CanBindToNewRun { get; init; }
-        public bool CanBindToExistingActiveRun { get; init; }
-        public bool CanBindToExistingFinishedRun { get; init; }        
-        public bool MustBindToNewIfContinued { get; init; }
-        public WorkflowRunStubConfiguration()
-            : this(canBindToNewRun: true, canBindToExistingActiveRun: true, canBindToExistingFinishedRun: true, mustBindToNewIfContinued: false) { }
-        public WorkflowRunStubConfiguration(bool canBindToNewRun, bool canBindToActiveRun)
-            : this(canBindToNewRun, canBindToExistingActiveRun: canBindToActiveRun, canBindToExistingFinishedRun: true, mustBindToNewIfContinued: false) { }
+public sealed class WorkflowRunStubConfiguration
+{
+    public bool CanBindToNewRun { get; init; }
+    public bool CanBindToExistingActiveRun { get; init; }
+    public bool CanBindToExistingFinishedRun { get; init; }        
+    public bool MustBindToNewIfContinued { get; init; }
+    public WorkflowRunStubConfiguration()
+        : this(canBindToNewRun: true, canBindToExistingActiveRun: true, canBindToExistingFinishedRun: true, mustBindToNewIfContinued: false) { }
+    public WorkflowRunStubConfiguration(bool canBindToNewRun, bool canBindToActiveRun)
+        : this(canBindToNewRun, canBindToExistingActiveRun: canBindToActiveRun, canBindToExistingFinishedRun: true, mustBindToNewIfContinued: false) { }
 
-        public WorkflowRunStubConfiguration(bool canBindToNewRun, bool canBindToExistingActiveRun, bool canBindToExistingFinishedRun, bool mustBindToNewIfContinued)
-        {
-            CanBindToNewRun = canBindToNewRun;
-            CanBindToExistingActiveRun = canBindToExistingActiveRun;
-            CanBindToExistingFinishedRun = canBindToExistingFinishedRun;
-            MustBindToNewIfContinued = mustBindToNewIfContinued;
-        }
+    public WorkflowRunStubConfiguration(bool canBindToNewRun, bool canBindToExistingActiveRun, bool canBindToExistingFinishedRun, bool mustBindToNewIfContinued)
+    {
+        CanBindToNewRun = canBindToNewRun;
+        CanBindToExistingActiveRun = canBindToExistingActiveRun;
+        CanBindToExistingFinishedRun = canBindToExistingFinishedRun;
+        MustBindToNewIfContinued = mustBindToNewIfContinued;
     }
+}
 
     // ----------- -----------
 

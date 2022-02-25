@@ -112,19 +112,19 @@ namespace Temporal.Sdk.BasicSamples
         }
 
         /// <summary>
-        /// If is not required for the worker-hosted workflow implementation to implment those interfaces.
+        /// If is not required for the worker-hosted workflow implementation to implement those interfaces.
         /// In fact, doing that can be awkward.
         /// E.g.:
         ///  - The client will not be aware of <see cref="WorkflowContext" /> parameters.
-        ///  - The signal handlers may be optionaly synchronous if they do not use any async APIs.
+        ///  - The signal handlers may be optionally synchronous if they do not use any async APIs.
         ///    But client stub for signals are always async.
         ///  - The query handlers must be synchronous as they may not use any async APIs.
         ///    But client stub for queries are always async.
         ///  - ...
         ///    
         /// That is exemplified in this sample. The hosted workflow implements the client-side interfaces.
-        /// The superflous methods that would not otherwise be required are non-public.
-        /// The worker host does not pay attetion to WorkflowStubAttributes (other than for validation) and 
+        /// The superfluous methods that would not otherwise be required are non-public.
+        /// The worker host does not pay attention to WorkflowStubAttributes (other than for validation) and 
         /// uses <see cref="WorkflowAttribute" />, <see cref="WorkflowSignalHandlerAttribute" /> and <see cref="WorkflowQueryHandlerAttribute" />
         /// instead.
         /// </summary>

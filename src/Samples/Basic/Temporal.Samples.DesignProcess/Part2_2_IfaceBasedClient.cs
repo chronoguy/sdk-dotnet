@@ -15,18 +15,29 @@ namespace Temporal.Sdk.BasicSamples
             TemporalServiceClientConfiguration serviceConfig = new();
             TemporalServiceNamespaceClient serviceClient = await (new TemporalServiceClient(serviceConfig)).GetNamespaceClientAsync();
 
+            // Create a new workflow and obtain a workflow run stub that implements the `IShoppingCart` iface:
             IShoppingCart cart = serviceClient.GetNewWorkflow("ShoppingCart").GetRunStub<IShoppingCart>("taskQueue");
 
+            // Start the workflow by invoking its main routine:
             Task<OrderConfirmation> order = cart.ShopAsync(new User("Jean-Luc", "Picard", Guid.NewGuid()));
+            
+            // Interact with the workflow by sending signals:
             await cart.AddProductAsync(new Product("Starship Model", new MoneyAmount(42, 99)));
             await cart.SetDeliveryInfoAsync(new DeliveryInfo("11 Headquarters Street, San Francisco"));
+
+            // Execute a workflow query and send another signal:
             MoneyAmount price = (await cart.TryGetTotalWithTaxAsync()).Result;
             await cart.ApplyPaymentAsync(price);
+
+            // Await the completion of the workflow:
             OrderConfirmation confirmation = await order;
 
+            // Use the workflow result:
             Console.WriteLine($" Order \"{confirmation.OrderId}\" was placed at {confirmation.TimestampUtc}.");
         }
 
+        /// <summary>Convenience method for obtaining a <c>TemporalServiceNamespaceClient</c> for the 
+        /// namespace "Shopping" (reused in subsequent samples).</summary>
         private static async Task<TemporalServiceNamespaceClient> GetShoppingNamespaceClientAsync()
         {
             TemporalServiceClientConfiguration serviceConfig = new();
@@ -39,9 +50,16 @@ namespace Temporal.Sdk.BasicSamples
             TemporalServiceNamespaceClient client = await GetShoppingNamespaceClientAsync();
 
             Workflow userVisits = await client.GetWorkflowAsync("ShoppingCart", shopper.UserKey);
-            IProductList cart = userVisits.GetRunStub<IProductList>();  // Note that both 'IProductList' and 'IShoppingCart' are valid here.
 
-            return await AddProductToExistingCart_Logic(product, cart);
+            if ((await userVisits.TryGetLatestRunAsync()).IsSuccess(out WorkflowRun wfRun))
+            {
+                IProductList cart = wfRun.GetStub<IProductList>();  // Note that both 'IProductList' and 'IShoppingCart' are valid here.
+                return await AddProductToExistingCart_Logic(product, cart);
+            }
+            else
+            {
+                return false;
+            }
         }
 
         private static async Task<bool> AddProductToExistingCart_Logic(Product product, IProductList cart)
@@ -62,10 +80,10 @@ namespace Temporal.Sdk.BasicSamples
 
         public static async Task<bool> TryAddShippingInfoIfUserIsShopping_Main(User shopper, DeliveryInfo shippingInfo)
         {
-            TemporalServiceNamespaceClient client = await GetShoppingNamespaceClientAsync();
+            TemporalServiceNamespaceClient client = await GetShoppingNamespaceClientAsync(); // Defined in previous sample
 
             Workflow userVisits = await client.GetWorkflowAsync("ShoppingCart", shopper.UserKey);
-            IShoppingCart cart = userVisits.GetRunStub<IShoppingCart>();
+            IShoppingCart cart = (await userVisits.GetLatestRunAsync()).GetStub<IShoppingCart>();
 
             return await TryAddShippingInfoIfUserIsShopping_Logic(shippingInfo, cart);
         }
@@ -74,7 +92,8 @@ namespace Temporal.Sdk.BasicSamples
         {
             try
             {
-                await cart.SetDeliveryInfoAsync(shippingInfo); // Will throw if no active run available for binding.
+                Task<OrderConfirmation> _ = cart.ContinueShoppingAsync(); // Will throw if no active run available for binding.
+                await cart.SetDeliveryInfoAsync(shippingInfo); 
                 return true;  // Shipping info applied.
             }
             catch (NeedsDesignException)
@@ -169,7 +188,7 @@ namespace Temporal.Sdk.BasicSamples
 
         private static async Task AddProductToNewOrExistingCart_Logic(User shopper, Product product, IShoppingCart cart)
         {
-            await cart.ShopAsync(shopper);  // Start new run or connet to existing.
+            await cart.ShopAsync(shopper);  // Start new run or connect to existing.
 
             Console.WriteLine("Current items:");
             Products cartItems = await cart.GetProductsAsync();
