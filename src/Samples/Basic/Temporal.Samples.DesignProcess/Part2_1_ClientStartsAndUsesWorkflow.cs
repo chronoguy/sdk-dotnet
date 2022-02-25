@@ -142,6 +142,7 @@ namespace Temporal.Sdk.BasicSamples
                 }
 
                 // Wait for the workflow to finish and check if it respected the cancellation:
+                // (note that if the workflow does not respect the cancellation, this may await indefinitely)
                 WorkflowRunResult result = await latestRun.GetResultAsync();
                 Console.WriteLine("Workflow cancellation "
                                 + (result.IsCancelled ? "was respected" : "was not respected")
